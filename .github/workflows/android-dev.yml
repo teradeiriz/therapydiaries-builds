@@ -1,0 +1,105 @@
+name: Distribute APK App to Firebase App Distribution
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  repository_dispatch:
+    types: ['distribute-apk']
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: macos-latest
+
+    strategy:
+      matrix:
+        node-version: [12.x]
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+    - uses: actions/checkout@v2
+
+    - name: Check all required variables
+      run: sh ./scripts/check.sh
+      env:
+        USER_NAME: ${{ secrets.GITLAB_USER_NAME }}
+        USER_EMAIL: ${{ secrets.GITLAB_USER_EMAIL }}
+        SSH_KNOWN_HOST: ${{ secrets.SSH_KNOWN_HOST }}
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        CURRENT_BRANCH: ${{ github.event.client_payload.branch }}
+        REPO_NAME: ${{ secrets.REPO_NAME }}
+        ENCRYPT_PASSWORD: ${{ secrets.ENCRYPT_PASSWORD }}
+        DATABASE_DEFAULT_ENCRYPTION_KEY: ${{ secrets.DATABASE_DEFAULT_ENCRYPTION_KEY }}
+        OAUTH_CLIENT_ID_ANDROID: ${{ secrets.OAUTH_CLIENT_ID_ANDROID }}
+        APP_METRICA_API_KEY: ${{ secrets.APP_METRICA_API_KEY }}
+        FIREBASEAPPDISTRO_APP: ${{ secrets.FIREBASE_APP_ID_ANDROID }}
+        FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+
+    - name: Configure git users
+      run: |
+          git config --global user.name ${{ secrets.GITLAB_USER_NAME }}
+          git config --global user.email ${{ secrets.GITLAB_USER_EMAIL }}
+
+    - name: Setup SSH keys and known_hosts
+      env:
+        SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+      run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan ${{ secrets.SSH_KNOWN_HOST }} >> ~/.ssh/known_hosts
+          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
+          ssh-add - <<< "${{ secrets.SSH_PRIVATE_KEY }}"
+    
+    - name: Get repository
+      env:
+        SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+      run: |
+        git clone ${{ secrets.REPO_URL }} --branch=${{ github.event.client_payload.branch }} --single --depth=1
+        cd ${{ secrets.REPO_NAME }}/
+
+    - name: Install Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
+    - uses: actions/setup-ruby@v1
+      with:
+        ruby-version: '2.x'
+
+    - name: Install Fastlane
+      run: bundle install
+      working-directory: ${{ secrets.REPO_NAME }}
+
+    - name: Install packages
+      run: |
+        yarn --version
+        yarn install --frozen-lockfile
+      working-directory: ${{ secrets.REPO_NAME }}
+    
+    - name: Decrypt keystore and Google Credentials
+      run: sh ../scripts/android-gpg-decrypt.sh
+      env:
+        ENCRYPT_PASSWORD: ${{ secrets.ENCRYPT_PASSWORD }}
+      working-directory: ${{ secrets.REPO_NAME }}
+    
+    - name: Install Firebase
+      run: |
+        curl -sL https://firebase.tools | bash
+        which firebase
+      env:
+        FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+      shell: bash
+      working-directory: ${{ secrets.REPO_NAME }}
+
+    - name: Run fastlane line "fastlane android buildapk" with PROD ENV variables
+      run: bundle exec fastlane android buildapk
+      working-directory: ${{ secrets.REPO_NAME }}
+      env:
+        SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+        DATABASE_DEFAULT_ENCRYPTION_KEY: ${{ secrets.DATABASE_DEFAULT_ENCRYPTION_KEY }}
+        OAUTH_CLIENT_ID_ANDROID: ${{ secrets.OAUTH_CLIENT_ID_ANDROID }}
+        APP_METRICA_API_KEY: ${{ secrets.APP_METRICA_API_KEY }}
+        FIREBASEAPPDISTRO_APP: ${{ secrets.FIREBASE_APP_ID_ANDROID }}
+        FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        CURRENT_BRANCH: ${{ github.event.client_payload.branch }}
