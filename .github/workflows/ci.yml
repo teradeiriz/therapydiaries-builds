@@ -23,3 +23,6 @@ jobs:
 
     - name: Use code
       run: git clone git@gitlab.com:sintylapse/TherapyDiaries.git
+    
+    - name: Install modules
+      run: cd TherapyDiaries && yarn install
