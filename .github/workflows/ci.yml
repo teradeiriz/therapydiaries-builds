@@ -22,8 +22,9 @@ jobs:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
     - name: Add git config settings
-      run: git config --global user.name $GITLAB_USER_NAME
-      run: git config --global user.email $GITLAB_USER_EMAIL
+      run: |
+          git config --global user.name $GITLAB_USER_NAME
+          git config --global user.email $GITLAB_USER_EMAIL
 
     - name: Get repository
       run: git clone git@gitlab.com:sintylapse/TherapyDiaries.git
