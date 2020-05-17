@@ -12,8 +12,8 @@ on: push
 jobs:
   # This workflow contains a single job called "build"
   build:
-    # The type of runner that the job will run on
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
+    container: reactnativecommunity/react-native-android:2020-4-1
 
     strategy:
       matrix:
@@ -45,33 +45,33 @@ jobs:
           git config --global user.name ${{ secrets.GITLAB_USER_NAME }}
           git config --global user.email ${{ secrets.GITLAB_USER_EMAIL }}
 
+    - name: Decrypt keystore and Google Credentials
+      run: sh ../scripts/android-gpg-decrypt.sh
+      env:
+        ENCRYPT_PASSWORD: ${{ secrets.ENCRYPT_PASSWORD }}
+
     - name: Setup SSH keys and known_hosts
       env:
         SSH_AUTH_SOCK: /tmp/ssh_agent.sock
       run: |
           mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
           ssh-keyscan ${{ secrets.SSH_KNOWN_HOST }} >> ~/.ssh/known_hosts
           ssh-agent -a $SSH_AUTH_SOCK > /dev/null
-          ssh-add - <<< "${{ secrets.SSH_PRIVATE_KEY }}"
+          ssh-add ~/.ssh/id_rsa
+
 
     - name: Get repository
       env:
         SSH_AUTH_SOCK: /tmp/ssh_agent.sock
       run: |
-        git clone ${{ secrets.REPO_URL }} --branch=develop --single --depth=1
-        cd ${{ secrets.REPO_NAME }}/
-
-    - name: Install Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
-      with:
-        node-version: ${{ matrix.node-version }}
-    - uses: actions/setup-ruby@v1
-      with:
-        ruby-version: '2.x'
-
-    - name: Install Fastlane
-      run: bundle install
-      working-directory: ${{ secrets.REPO_NAME }}
+        rm -rf .git
+        git init
+        git remote add origin ${{ secrets.REPO_URL }}
+        git -c protocol.version=2 fetch --no-tags --prune --progress --no-recurse-submodules --depth=1 origin +54fdbb2c17c7b2793de613ad52ed9127b2523d53:refs/remotes/origin/develop
+        git checkout --progress --force -B develop refs/remotes/origin/develop
+        git log -1
 
     - name: Restore Yarn v1 cache
       uses: actions/cache@v1
@@ -82,16 +82,7 @@ jobs:
           ${{ runner.os }}-yarn-v1-
 
     - name: Install packages
-      run: |
-        yarn --version
-        yarn install --frozen-lockfile --cache-folder /tmp/cache/yarn
-      working-directory: ${{ secrets.REPO_NAME }}
-
-    - name: Decrypt keystore and Google Credentials
-      run: sh ../scripts/android-gpg-decrypt.sh
-      env:
-        ENCRYPT_PASSWORD: ${{ secrets.ENCRYPT_PASSWORD }}
-      working-directory: ${{ secrets.REPO_NAME }}
+      run: yarn install --frozen-lockfile --cache-folder /tmp/cache/yarn
 
     - name: Install Firebase
       run: |
@@ -100,7 +91,19 @@ jobs:
       env:
         FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
       shell: bash
-      working-directory: ${{ secrets.REPO_NAME }}
+
+    - name: Restore Ruby cache
+      uses: actions/cache@v1
+      with:
+        path: vendor/bundle
+        key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-gems-
+
+    - name: Install Fastlane
+      run: |
+        bundle config path vendor/bundle
+        bundle install --jobs 4 --retry 3
 
     - name: Restore Gradle cache
       uses: actions/cache@v1
@@ -112,7 +115,6 @@ jobs:
 
     - name: Run fastlane line "fastlane android buildapk" with PROD ENV variables
       run: bundle exec fastlane android buildapk
-      working-directory: ${{ secrets.REPO_NAME }}
       env:
         SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         DATABASE_DEFAULT_ENCRYPTION_KEY: ${{ secrets.DATABASE_DEFAULT_ENCRYPTION_KEY }}
