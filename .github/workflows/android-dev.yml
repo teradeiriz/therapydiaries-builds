@@ -2,9 +2,11 @@ name: Distribute APK App to Firebase App Distribution
 
 # Controls when the action will run. Triggers the workflow on push or pull request
 # events but only for the master branch
-on:
-  repository_dispatch:
-    types: ['distribute-apk']
+
+on: push
+# FIXME on:
+#  repository_dispatch:
+#    types: ['distribute-apk']
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -51,7 +53,7 @@ jobs:
           ssh-keyscan ${{ secrets.SSH_KNOWN_HOST }} >> ~/.ssh/known_hosts
           ssh-agent -a $SSH_AUTH_SOCK > /dev/null
           ssh-add - <<< "${{ secrets.SSH_PRIVATE_KEY }}"
-    
+
     - name: Get repository
       env:
         SSH_AUTH_SOCK: /tmp/ssh_agent.sock
@@ -71,18 +73,26 @@ jobs:
       run: bundle install
       working-directory: ${{ secrets.REPO_NAME }}
 
+    - name: Restore Yarn v1 cache
+      uses: actions/cache@v1
+      with:
+        path: /tmp/cache/yarn
+        key: ${{ runner.os }}-yarn-v1-${{ hashFiles('**/yarn.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-yarn-v1-
+
     - name: Install packages
       run: |
         yarn --version
-        yarn install --frozen-lockfile
+        yarn install --frozen-lockfile --cache-folder /tmp/cache/yarn
       working-directory: ${{ secrets.REPO_NAME }}
-    
+
     - name: Decrypt keystore and Google Credentials
       run: sh ../scripts/android-gpg-decrypt.sh
       env:
         ENCRYPT_PASSWORD: ${{ secrets.ENCRYPT_PASSWORD }}
       working-directory: ${{ secrets.REPO_NAME }}
-    
+
     - name: Install Firebase
       run: |
         curl -sL https://firebase.tools | bash
@@ -91,6 +101,14 @@ jobs:
         FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
       shell: bash
       working-directory: ${{ secrets.REPO_NAME }}
+
+    - name: Restore Gradle cache
+      uses: actions/cache@v1
+      with:
+        path: ~/.gradle/caches
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
 
     - name: Run fastlane line "fastlane android buildapk" with PROD ENV variables
       run: bundle exec fastlane android buildapk
