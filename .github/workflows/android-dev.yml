@@ -9,13 +9,8 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
-    runs-on: macos-latest
-
-    strategy:
-      matrix:
-        node-version: [12.x]
+  deploy_to_app_distribution:
+    runs-on: ubuntu-latest
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -38,6 +33,9 @@ jobs:
         FIREBASEAPPDISTRO_APP: ${{ secrets.FIREBASE_APP_ID_ANDROID }}
         FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
 
+    - name: Fix error 'ENOSPC - System limit for number of file watchers reached'
+      run: echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
+
     - name: Configure git users
       run: |
           git config --global user.name ${{ secrets.GITLAB_USER_NAME }}
@@ -48,53 +46,79 @@ jobs:
         SSH_AUTH_SOCK: /tmp/ssh_agent.sock
       run: |
           mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
           ssh-keyscan ${{ secrets.SSH_KNOWN_HOST }} >> ~/.ssh/known_hosts
           ssh-agent -a $SSH_AUTH_SOCK > /dev/null
-          ssh-add - <<< "${{ secrets.SSH_PRIVATE_KEY }}"
-    
+          ssh-add ~/.ssh/id_rsa
+
     - name: Get repository
       env:
         SSH_AUTH_SOCK: /tmp/ssh_agent.sock
       run: |
-        git clone ${{ secrets.REPO_URL }} --branch=${{ github.event.client_payload.branch }} --single --depth=1
-        cd ${{ secrets.REPO_NAME }}/
+        rm -rf ./.git ./.github ./*
+        ls -la ./
+        git clone ${{ secrets.REPO_URL }} --branch=${{ github.event.client_payload.branch }} --single --depth=1 ./
+        git log -1
 
-    - name: Install Node.js ${{ matrix.node-version }}
+    - name: Decrypt keystore and Google Credentials
+      run: |
+        gpg --quiet --batch --yes --decrypt --passphrase="${{ secrets.ENCRYPT_PASSWORD }}" \
+        --output ./android/keystores/release.keystore ./android/keystores/release.keystore.gpg
+        gpg --quiet --batch --yes --decrypt --passphrase="${{ secrets.ENCRYPT_PASSWORD }}" \
+        --output ./android/keystores/google-private-key.json ./android/keystores/google-private-key.json.gpg
+
+
+    - name: Install Node.js 12.x
       uses: actions/setup-node@v1
       with:
-        node-version: ${{ matrix.node-version }}
-    - uses: actions/setup-ruby@v1
+        node-version: 12.x
+
+    - name: Install Ruby 2.x
+      uses: actions/setup-ruby@v1
       with:
         ruby-version: '2.x'
 
-    - name: Install Fastlane
-      run: bundle install
-      working-directory: ${{ secrets.REPO_NAME }}
-
-    - name: Install packages
-      run: |
-        yarn --version
-        yarn install --frozen-lockfile
-      working-directory: ${{ secrets.REPO_NAME }}
-    
-    - name: Decrypt keystore and Google Credentials
-      run: sh ../scripts/android-gpg-decrypt.sh
-      env:
-        ENCRYPT_PASSWORD: ${{ secrets.ENCRYPT_PASSWORD }}
-      working-directory: ${{ secrets.REPO_NAME }}
-    
     - name: Install Firebase
       run: |
-        curl -sL https://firebase.tools | bash
-        which firebase
-      env:
-        FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-      shell: bash
-      working-directory: ${{ secrets.REPO_NAME }}
+        sudo curl -o "/usr/local/bin/firebase" -L --progress-bar "https://firebase.tools/bin/linux/latest"
+        sudo chmod +rx "/usr/local/bin/firebase"
+
+    - name: Restore Yarn v1 cache
+      uses: actions/cache@v1
+      with:
+        path: /tmp/cache/yarn
+        key: ${{ runner.os }}-yarn-v1-${{ hashFiles('**/yarn.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-yarn-v1-
+
+    - name: Install packages
+      run: yarn install --frozen-lockfile --cache-folder /tmp/cache/yarn
+
+    - name: Restore ruby bundle cache
+      uses: actions/cache@v1
+      with:
+        path: vendor/bundle
+        key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-gems-
+
+    - name: Install gem dependencies
+      run: |
+        bundle config path vendor/bundle
+        bundle install --jobs 4 --retry 3
+
+    - name: Restore Gradle cache
+      uses: actions/cache@v1
+      with:
+        path: ~/.gradle/caches
+        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
+        restore-keys: |
+          ${{ runner.os }}-gradle-
+
 
     - name: Run fastlane line "fastlane android buildapk" with PROD ENV variables
       run: bundle exec fastlane android buildapk
-      working-directory: ${{ secrets.REPO_NAME }}
       env:
         SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         DATABASE_DEFAULT_ENCRYPTION_KEY: ${{ secrets.DATABASE_DEFAULT_ENCRYPTION_KEY }}
