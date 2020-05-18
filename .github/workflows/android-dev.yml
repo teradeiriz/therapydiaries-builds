@@ -13,7 +13,6 @@ jobs:
   # This workflow contains a single job called "build"
   build:
     runs-on: ubuntu-latest
-    container: reactnativecommunity/react-native-android:2020-4-1
 
     strategy:
       matrix:
@@ -61,7 +60,6 @@ jobs:
           ssh-agent -a $SSH_AUTH_SOCK > /dev/null
           ssh-add ~/.ssh/id_rsa
 
-
     - name: Get repository
       env:
         SSH_AUTH_SOCK: /tmp/ssh_agent.sock
@@ -72,6 +70,11 @@ jobs:
         git -c protocol.version=2 fetch --no-tags --prune --progress --no-recurse-submodules --depth=1 origin +54fdbb2c17c7b2793de613ad52ed9127b2523d53:refs/remotes/origin/develop
         git checkout --progress --force -B develop refs/remotes/origin/develop
         git log -1
+
+    - name: Install Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v1
+      with:
+        node-version: ${{ matrix.node-version }}
 
     - name: Restore Yarn v1 cache
       uses: actions/cache@v1
