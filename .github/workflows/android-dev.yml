@@ -11,12 +11,8 @@ on: push
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
-  build:
+  deploy_to_app_distribution:
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [12.x]
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
@@ -62,11 +58,9 @@ jobs:
       env:
         SSH_AUTH_SOCK: /tmp/ssh_agent.sock
       run: |
-        rm -rf .git
-        git init
-        git remote add origin ${{ secrets.REPO_URL }}
-        git -c protocol.version=2 fetch --no-tags --prune --progress --no-recurse-submodules --depth=1 origin +54fdbb2c17c7b2793de613ad52ed9127b2523d53:refs/remotes/origin/develop
-        git checkout --progress --force -B develop refs/remotes/origin/develop
+        rm -rf ./.git ./.github ./*
+        ls -la ./
+        git clone ${{ secrets.REPO_URL }} --branch=develop --single --depth=1 ./
         git log -1
 
     - name: Decrypt keystore and Google Credentials
@@ -84,7 +78,7 @@ jobs:
     - name: Install Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v1
       with:
-        node-version: ${{ matrix.node-version }}
+        node-version: 12.x
 
     - name: Restore Yarn v1 cache
       uses: actions/cache@v1
@@ -97,14 +91,6 @@ jobs:
     - name: Install packages
       run: yarn install --frozen-lockfile --cache-folder /tmp/cache/yarn
 
-#    - name: Install Firebase
-#      run: |
-#        curl -sL https://firebase.tools | bash
-#        which firebase
-#      env:
-#        FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-#      shell: bash
-
     - name: Restore Ruby cache
       uses: actions/cache@v1
       with:
@@ -113,7 +99,7 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-gems-
 
-    - name: Install Fastlane
+    - name: Install gem dependencies
       run: |
         bundle config path vendor/bundle
         bundle install --jobs 4 --retry 3
@@ -126,10 +112,11 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-gradle-
 
-    - name: Install firebase
+    - name: Install Firebase
       run: |
         sudo curl -o "/usr/local/bin/firebase" -L --progress-bar "https://firebase.tools/bin/linux/latest"
         sudo chmod +rx "/usr/local/bin/firebase"
+
 
     - name: Run fastlane line "fastlane android buildapk" with PROD ENV variables
       run: bundle exec fastlane android buildapk
