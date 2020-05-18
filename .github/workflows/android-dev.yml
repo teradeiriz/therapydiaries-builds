@@ -39,15 +39,13 @@ jobs:
         FIREBASEAPPDISTRO_APP: ${{ secrets.FIREBASE_APP_ID_ANDROID }}
         FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
 
+    - name: Fix error 'ENOSPC - System limit for number of file watchers reached'
+      run: echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
+
     - name: Configure git users
       run: |
           git config --global user.name ${{ secrets.GITLAB_USER_NAME }}
           git config --global user.email ${{ secrets.GITLAB_USER_EMAIL }}
-
-    - name: Decrypt keystore and Google Credentials
-      run: sh ../scripts/android-gpg-decrypt.sh
-      env:
-        ENCRYPT_PASSWORD: ${{ secrets.ENCRYPT_PASSWORD }}
 
     - name: Setup SSH keys and known_hosts
       env:
@@ -71,6 +69,18 @@ jobs:
         git checkout --progress --force -B develop refs/remotes/origin/develop
         git log -1
 
+    - name: Decrypt keystore and Google Credentials
+      run: |
+        gpg --quiet --batch --yes --decrypt --passphrase="${{ secrets.ENCRYPT_PASSWORD }}" \
+        --output ./android/keystores/release.keystore ./android/keystores/release.keystore.gpg
+        gpg --quiet --batch --yes --decrypt --passphrase="${{ secrets.ENCRYPT_PASSWORD }}" \
+        --output ./android/keystores/google-private-key.json ./android/keystores/google-private-key.json.gpg
+
+
+    - uses: actions/setup-ruby@v1
+      with:
+        ruby-version: '2.x'
+
     - name: Install Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v1
       with:
@@ -87,13 +97,13 @@ jobs:
     - name: Install packages
       run: yarn install --frozen-lockfile --cache-folder /tmp/cache/yarn
 
-    - name: Install Firebase
-      run: |
-        curl -sL https://firebase.tools | bash
-        which firebase
-      env:
-        FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-      shell: bash
+#    - name: Install Firebase
+#      run: |
+#        curl -sL https://firebase.tools | bash
+#        which firebase
+#      env:
+#        FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+#      shell: bash
 
     - name: Restore Ruby cache
       uses: actions/cache@v1
@@ -115,6 +125,11 @@ jobs:
         key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
         restore-keys: |
           ${{ runner.os }}-gradle-
+
+    - name: Install firebase
+      run: |
+        sudo curl -o "/usr/local/bin/firebase" -L --progress-bar "https://firebase.tools/bin/linux/latest"
+        sudo chmod +rx "/usr/local/bin/firebase"
 
     - name: Run fastlane line "fastlane android buildapk" with PROD ENV variables
       run: bundle exec fastlane android buildapk
