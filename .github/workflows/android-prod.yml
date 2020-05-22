@@ -40,7 +40,7 @@ jobs:
       env:
         SSH_AUTH_SOCK: /tmp/ssh_agent.sock
       run: |
-        git clone ${{ secrets.REPO_URL }} --branch=setup-github-actions --single --depth=1
+        git clone ${{ secrets.REPO_URL }} --branch=${{ github.event.client_payload.branch }} --single --depth=1
         cd ${{ secrets.REPO_NAME }}/
 
     - name: Install Node.js ${{ matrix.node-version }}
