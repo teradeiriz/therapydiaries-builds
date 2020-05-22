@@ -75,3 +75,4 @@ jobs:
         DATABASE_DEFAULT_ENCRYPTION_KEY: ${{ secrets.DATABASE_DEFAULT_ENCRYPTION_KEY }}
         OAUTH_CLIENT_ID_ANDROID: ${{ secrets.OAUTH_CLIENT_ID_ANDROID }}
         APP_METRICA_API_KEY: ${{ secrets.APP_METRICA_API_KEY }}
+        BUMP_TYPE: ${{ github.event.client_payload.bump_type }}
