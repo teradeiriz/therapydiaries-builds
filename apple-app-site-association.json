@@ -1,0 +1,11 @@
+{
+    "applinks": {
+        "apps": [],
+        "details": [
+            {
+                "appID": "65U753CZ2P.com.sintylapse.therapydiaries",
+                "paths":["NOT /_/*","/*"]
+            }
+        ]
+    }
+}
