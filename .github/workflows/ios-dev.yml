@@ -1,4 +1,4 @@
-name: Distribute iOS IPA to Firebase App Distribution
+name: Distribute IPA to Firebase App Distribution
 
 # Controls when the action will run. Triggers the workflow on push or pull request
 # events but only for the master branch
@@ -25,6 +25,7 @@ jobs:
         USER_EMAIL: ${{ secrets.GITLAB_USER_EMAIL }}
         SSH_KNOWN_HOST: ${{ secrets.SSH_KNOWN_HOST }}
         SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        CURRENT_BRANCH: setup-ios-builds
         REPO_NAME: ${{ secrets.REPO_NAME }}
         DATABASE_DEFAULT_ENCRYPTION_KEY: ${{ secrets.DATABASE_DEFAULT_ENCRYPTION_KEY }}
         APP_METRICA_API_KEY: ${{ secrets.APP_METRICA_API_KEY }}
