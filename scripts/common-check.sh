@@ -4,6 +4,12 @@ set -e
 # print all env variables
 # printenv | cat
 
+if [[ -z "$SSH_AUTH_SOCK" ]]
+then
+    echo "Please sure that SSH_AUTH_SOCK exists"
+    exit 1
+fi
+
 if [[ -z "$USER_NAME" ]]
 then
     echo "Please sure that USER_NAME exists"
@@ -34,15 +40,9 @@ then
     exit 1
 fi
 
-if [[ -z "$REPO_NAME" ]]
+if [[ -z "$REPO_URL" ]]
 then
-    echo "Please sure that REPO_NAME exists"
-    exit 1
-fi
-
-if [[ -z "$ENCRYPT_PASSWORD" ]]
-then
-    echo "Please sure that ENCRYPT_PASSWORD exists"
+    echo "Please sure that REPO_URL exists"
     exit 1
 fi
 
@@ -61,17 +61,5 @@ fi
 if [[ -z "$APP_METRICA_API_KEY" ]]
 then
     echo "Please sure that APP_METRICA_API_KEY exists"
-    exit 1
-fi
-
-if [[ -z "$FIREBASEAPPDISTRO_APP" ]]
-then
-    echo "Please sure that FIREBASEAPPDISTRO_APP exists"
-    exit 1
-fi
-
-if [[ -z "$FIREBASE_TOKEN" ]]
-then
-    echo "Please sure that FIREBASE_TOKEN exists"
     exit 1
 fi

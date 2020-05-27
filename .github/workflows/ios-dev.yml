@@ -1,14 +1,14 @@
-name: Distribute APK App to Firebase App Distribution
+name: Distribute IPA to Firebase App Distribution
 
 # Controls when the action will run. Triggers the workflow on push or pull request
 # events but only for the master branch
 on:
   repository_dispatch:
-    types: ['distribute-apk']
+    types: ['distribute-ipa']
 
 jobs:
   deploy_to_app_distribution:
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
 
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
@@ -24,18 +24,19 @@ jobs:
         echo "::set-env name=SSH_PRIVATE_KEY::${{ secrets.SSH_PRIVATE_KEY }}"
         echo "::set-env name=CURRENT_BRANCH::${{ github.event.client_payload.branch }}"
         echo "::set-env name=REPO_URL::${{ secrets.REPO_URL }}"
-        echo "::set-env name=ENCRYPT_PASSWORD::${{ secrets.ENCRYPT_PASSWORD }}"
         echo "::set-env name=DATABASE_DEFAULT_ENCRYPTION_KEY::${{ secrets.DATABASE_DEFAULT_ENCRYPTION_KEY }}"
         echo "::set-env name=OAUTH_CLIENT_ID_ANDROID::${{ secrets.OAUTH_CLIENT_ID_ANDROID }}"
         echo "::set-env name=APP_METRICA_API_KEY::${{ secrets.APP_METRICA_API_KEY }}"
-        echo "::set-env name=FIREBASEAPPDISTRO_APP::${{ secrets.FIREBASE_APP_ID_ANDROID }}"
+        echo "::set-env name=FIREBASEAPPDISTRO_APP::${{ secrets.FIREBASE_APP_ID_IOS }}"
         echo "::set-env name=FIREBASE_TOKEN::${{ secrets.FIREBASE_TOKEN }}"
+        echo "::set-env name=FASTLANE_USER::${{ secrets.FASTLANE_USER }}"
+        echo "::set-env name=FASTLANE_PASSWORD::${{ secrets.FASTLANE_PASSWORD }}"
+        echo "::set-env name=FASTLANE_SESSION::${{ secrets.FASTLANE_SESSION }}"
+        echo "::set-env name=MATCH_GIT_BASIC_AUTHORIZATION::${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}"
+        echo "::set-env name=MATCH_PASSWORD::${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}"
 
     - name: Check all required variables
-      run: sh ./scripts/common-check.sh && sh ./scripts/android-dev-check.sh
-
-    - name: Fix error 'ENOSPC - System limit for number of file watchers reached'
-      run: echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
+      run: sh ./scripts/common-check.sh && sh ./scripts/ios-dev-check.sh
 
     - name: Configure git users
       run: |
@@ -55,21 +56,14 @@ jobs:
       run: |
         rm -rf ./.git ./.github ./*
         ls -la ./
-        git clone "$REPO_URL" --branch="develop" --single --depth=1 ./
+        git clone "$REPO_URL" --branch="$CURRENT_BRANCH" --single --depth=1 ./
         git log -1
-
-    - name: Decrypt keystore and Google Credentials
-      run: |
-        gpg --quiet --batch --yes --decrypt --passphrase="$ENCRYPT_PASSWORD" \
-        --output ./android/keystores/release.keystore ./android/keystores/release.keystore.gpg
-        gpg --quiet --batch --yes --decrypt --passphrase="$ENCRYPT_PASSWORD" \
-        --output ./android/keystores/google-private-key.json ./android/keystores/google-private-key.json.gpg
 
     - name: Install Node.js 12.x
       uses: actions/setup-node@v1
       with:
         node-version: 12.x
-
+    
     - name: Install Ruby 2.x
       uses: actions/setup-ruby@v1
       with:
@@ -77,40 +71,21 @@ jobs:
 
     - name: Install Firebase
       run: |
-        sudo curl -o "/usr/local/bin/firebase" -L --progress-bar "https://firebase.tools/bin/linux/latest"
-        sudo chmod +rx "/usr/local/bin/firebase"
-
-    - name: Restore Yarn v1 cache
-      uses: actions/cache@v1
-      with:
-        path: /tmp/cache/yarn
-        key: ${{ runner.os }}-yarn-v1-${{ hashFiles('**/yarn.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-yarn-v1-
+        curl -sL https://firebase.tools | bash
+        which firebase
+      shell: bash
 
     - name: Install packages
       run: yarn install --frozen-lockfile --cache-folder /tmp/cache/yarn
-
-    - name: Restore ruby bundle cache
-      uses: actions/cache@v1
-      with:
-        path: vendor/bundle
-        key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-gems-
+    
+    - name: Install pods
+      run: pod install
+      working-directory: ios
 
     - name: Install gem dependencies
       run: |
         bundle config path vendor/bundle
         bundle install --jobs 4 --retry 3
 
-    - name: Restore Gradle cache
-      uses: actions/cache@v1
-      with:
-        path: ~/.gradle/caches
-        key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
-        restore-keys: |
-          ${{ runner.os }}-gradle-
-
-    - name: Run fastlane line "fastlane android buildapk" with PROD ENV variables
-      run: bundle exec fastlane android buildapk
+    - name: Run fastlane line "fastlane ios distribute" with PROD ENV variables
+      run: bundle exec fastlane ios distribute
