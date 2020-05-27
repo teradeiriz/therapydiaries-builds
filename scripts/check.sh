@@ -40,11 +40,12 @@ then
     exit 1
 fi
 
-if [[ -z "$ENCRYPT_PASSWORD" ]]
-then
-    echo "Please sure that ENCRYPT_PASSWORD exists"
-    exit 1
-fi
+# TODO check for android
+# if [[ -z "$ENCRYPT_PASSWORD" ]]
+# then
+#     echo "Please sure that ENCRYPT_PASSWORD exists"
+#     exit 1
+# fi
 
 if [[ -z "$DATABASE_DEFAULT_ENCRYPTION_KEY" ]]
 then
@@ -52,11 +53,12 @@ then
     exit 1
 fi
 
-if [[ -z "$OAUTH_CLIENT_ID_ANDROID" ]]
-then
-    echo "Please sure that OAUTH_CLIENT_ID_ANDROID exists"
-    exit 1
-fi
+# TODO check for android
+# if [[ -z "$OAUTH_CLIENT_ID_ANDROID" ]]
+# then
+#     echo "Please sure that OAUTH_CLIENT_ID_ANDROID exists"
+#     exit 1
+# fi
 
 if [[ -z "$APP_METRICA_API_KEY" ]]
 then
