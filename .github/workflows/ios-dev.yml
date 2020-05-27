@@ -88,7 +88,7 @@ jobs:
         bundle install --jobs 4 --retry 3
 
     - name: Run fastlane line "fastlane ios buildipa" with PROD ENV variables
-      run: bundle exec fastlane android buildapk
+      run: bundle exec fastlane ios buildipa
       env:
         SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         DATABASE_DEFAULT_ENCRYPTION_KEY: ${{ secrets.DATABASE_DEFAULT_ENCRYPTION_KEY }}
