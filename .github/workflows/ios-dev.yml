@@ -34,6 +34,7 @@ jobs:
         FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
         FASTLANE_USER: ${{ secrets.FASTLANE_USER }}
         FASTLANE_PASSWORD: ${{ secrets.FASTLANE_PASSWORD }}
+        FASTLANE_SESSION: ${{ secrets.FASTLANE_SESSION }}
 
     - name: Configure git users
       run: |
@@ -107,3 +108,4 @@ jobs:
         FASTLANE_USER: ${{ secrets.FASTLANE_USER }}
         FASTLANE_PASSWORD: ${{ secrets.FASTLANE_PASSWORD }}
         CURRENT_BRANCH: setup-ios-builds
+        FASTLANE_SESSION: ${{ secrets.FASTLANE_SESSION }}
