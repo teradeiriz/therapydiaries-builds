@@ -100,4 +100,6 @@ jobs:
         APP_METRICA_API_KEY: ${{ secrets.APP_METRICA_API_KEY }}
         FIREBASEAPPDISTRO_APP: ${{ secrets.FIREBASE_APP_ID_ANDROID }}
         FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        FASTLANE_USER: ${{ secrets.FASTLANE_USER }}
+        FASTLANE_PASSWORD: ${{ secrets.FASTLANE_PASSWORD }}
         CURRENT_BRANCH: setup-ios-builds

@@ -77,3 +77,15 @@ then
     echo "Please sure that FIREBASE_TOKEN exists"
     exit 1
 fi
+
+if [[ -z "$FASTLANE_USER" ]]
+then
+    echo "Please sure that FIREBASE_TOKEN exists"
+    exit 1
+fi
+
+if [[ -z "$FASTLANE_PASSWORD" ]]
+then
+    echo "Please sure that FIREBASE_TOKEN exists"
+    exit 1
+fi
