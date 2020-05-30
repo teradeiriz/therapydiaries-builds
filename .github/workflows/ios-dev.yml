@@ -62,6 +62,9 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: 12.x
+    
+    - name: Check all vars
+      run: yarn check-variables
 
     - name: Install Ruby 2.x
       uses: actions/setup-ruby@v1
