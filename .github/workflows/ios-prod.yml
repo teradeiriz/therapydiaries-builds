@@ -76,6 +76,9 @@ jobs:
 
     - name: Install packages
       run: yarn install --frozen-lockfile --cache-folder /tmp/cache/yarn
+
+    - name: Check all vars
+      run: yarn check-variables
     
     - name: Install pods
       run: pod install
