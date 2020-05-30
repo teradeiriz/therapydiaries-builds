@@ -54,7 +54,7 @@ jobs:
       run: |
         rm -rf ./.git ./.github ./*
         ls -la ./
-        git clone ${{ secrets.REPO_URL }} --branch=setup-ios-builds --single --depth=1 ./
+        git clone ${{ secrets.REPO_URL }} --branch=develop --single --depth=1 ./
         git log -1
 
     - name: Install Node.js 12.x
