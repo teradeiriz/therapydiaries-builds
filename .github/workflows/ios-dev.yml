@@ -65,25 +65,25 @@ jobs:
       with:
         node-version: 12.x
 
-    # - name: Install Ruby 2.x
-    #   uses: actions/setup-ruby@v1
-    #   with:
-    #     ruby-version: '2.x'
+    - name: Install Ruby 2.x
+      uses: actions/setup-ruby@v1
+      with:
+        ruby-version: '2.x'
 
-    # - name: Install Firebase
-    #   run: |
-    #     curl -sL https://firebase.tools | bash
-    #     which firebase
-    #   env:
-    #     FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-    #   shell: bash
+    - name: Install Firebase
+      run: |
+        curl -sL https://firebase.tools | bash
+        which firebase
+      env:
+        FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+      shell: bash
 
-    # - name: Install packages
-    #   run: yarn install --frozen-lockfile --cache-folder /tmp/cache/yarn
+    - name: Install packages
+      run: yarn install --frozen-lockfile --cache-folder /tmp/cache/yarn
     
-    # - name: Install pods
-    #   run: pod install
-    #   working-directory: ios
+    - name: Install pods
+      run: pod install
+      working-directory: ios
 
     - name: Install gem dependencies
       run: |
