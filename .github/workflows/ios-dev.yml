@@ -100,3 +100,4 @@ jobs:
         FIREBASEAPPDISTRO_APP: ${{ secrets.FIREBASE_APP_ID_ANDROID }}
         FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
         CURRENT_BRANCH: setup-ios-builds
+      working-directory: ios
