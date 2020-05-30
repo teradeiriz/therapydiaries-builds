@@ -80,12 +80,12 @@ fi
 
 if [[ -z "$FASTLANE_USER" ]]
 then
-    echo "Please sure that FIREBASE_TOKEN exists"
+    echo "Please sure that FASTLANE_USER exists"
     exit 1
 fi
 
 if [[ -z "$FASTLANE_PASSWORD" ]]
 then
-    echo "Please sure that FIREBASE_TOKEN exists"
+    echo "Please sure that FASTLANE_PASSWORD exists"
     exit 1
 fi
