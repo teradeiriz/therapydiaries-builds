@@ -6,6 +6,7 @@ on: push
  # FIXME on:
  #  repository_dispatch
  #    types: ['distribute-ipa']
+#  gem install fastlane bundler cocoapods
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -89,6 +90,7 @@ jobs:
       run: |
         bundle config path vendor/bundle
         bundle install --jobs 4 --retry 3
+        bundle update fastlane
 
     - name: Run fastlane line "fastlane ios buildipa" with PROD ENV variables
       run: bundle exec fastlane ios beta
