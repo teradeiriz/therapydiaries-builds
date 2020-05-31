@@ -52,6 +52,7 @@ jobs:
           ssh-agent -a $SSH_AUTH_SOCK > /dev/null
           ssh-add ~/.ssh/id_rsa
 
+
     - name: Get repository
       env:
         SSH_AUTH_SOCK: /tmp/ssh_agent.sock
