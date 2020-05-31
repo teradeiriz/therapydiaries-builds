@@ -56,7 +56,7 @@ jobs:
         ls -la ./
         git clone ${{ secrets.REPO_URL }} --branch=setup-ios-builds --single --depth=1 ./
         git log -1
-        ls -l
+        git checkout 897b69ae0f984ca31fa4739b14a7be8a4138b959
 
     - name: Install Node.js 12.x
       uses: actions/setup-node@v1
