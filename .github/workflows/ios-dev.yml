@@ -58,7 +58,7 @@ jobs:
       run: |
         rm -rf ./.git ./.github ./*
         ls -la ./
-        git clone ${{ secrets.REPO_URL }} --branch=setup-ios-builds --single --depth=1 ./
+        git clone ${{ secrets.REPO_URL }} --branch=test-branch-from-last-success --single --depth=1 ./
         git log -1
 
 
