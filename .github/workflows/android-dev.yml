@@ -22,7 +22,7 @@ jobs:
         echo "::set-env name=USER_EMAIL::${{ secrets.GITLAB_USER_EMAIL }}"
         echo "::set-env name=SSH_KNOWN_HOST::${{ secrets.SSH_KNOWN_HOST }}"
         echo "::set-env name=SSH_PRIVATE_KEY::${{ secrets.SSH_PRIVATE_KEY }}"
-        echo "::set-env name=CURRENT_BRANCH::develop"
+        echo "::set-env name=CURRENT_BRANCH::${{ github.event.client_payload.branch }}"
         echo "::set-env name=REPO_URL::${{ secrets.REPO_URL }}"
         echo "::set-env name=ENCRYPT_PASSWORD::${{ secrets.ENCRYPT_PASSWORD }}"
         echo "::set-env name=DATABASE_DEFAULT_ENCRYPTION_KEY::${{ secrets.DATABASE_DEFAULT_ENCRYPTION_KEY }}"
@@ -45,17 +45,15 @@ jobs:
     - name: Setup SSH keys and known_hosts
       run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" | tr -d '\r' > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
           ssh-keyscan $SSH_KNOWN_HOST >> ~/.ssh/known_hosts
           ssh-agent -a $SSH_AUTH_SOCK > /dev/null
-          ssh-add ~/.ssh/id_rsa
+          ssh-add - <<< $SSH_PRIVATE_KEY
 
     - name: Get repository
       run: |
         rm -rf ./.git ./.github ./*
         ls -la ./
-        git clone "$REPO_URL" --branch="$CURRENT_BRANCH" --single --depth=1 ./
+        git clone "$REPO_URL" --branch="develop" --single --depth=1 ./
         git log -1
 
     - name: Decrypt keystore and Google Credentials
