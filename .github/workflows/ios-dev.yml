@@ -2,11 +2,9 @@ name: Distribute IPA to Firebase App Distribution
 
 # Controls when the action will run. Triggers the workflow on push or pull request
 # events but only for the master branch
-on: push
- # FIXME on:
- #  repository_dispatch
- #    types: ['distribute-ipa']
-#  gem install fastlane bundler cocoapods
+on:
+  repository_dispatch:
+    types: ['distribute-ipa']
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -94,7 +92,7 @@ jobs:
         bundle update fastlane
 
     - name: Run fastlane line "fastlane ios buildipa" with PROD ENV variables
-      run: bundle exec fastlane ios beta
+      run: bundle exec fastlane ios buildipa
       env:
         SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
