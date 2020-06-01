@@ -19,7 +19,8 @@ jobs:
         USER_EMAIL: ${{ secrets.GITLAB_USER_EMAIL }}
         SSH_KNOWN_HOST: ${{ secrets.SSH_KNOWN_HOST }}
         SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-        CURRENT_BRANCH: ${{ github.event.client_payload.branch }}
+        # CURRENT_BRANCH: ${{ github.event.client_payload.branch }}
+        CURRENT_BRANCH: test-branch-from-last-success
         REPO_URL: ${{ secrets.REPO_URL }}
         DATABASE_DEFAULT_ENCRYPTION_KEY: ${{ secrets.DATABASE_DEFAULT_ENCRYPTION_KEY }}
         OAUTH_CLIENT_ID_ANDROID: ${{ secrets.OAUTH_CLIENT_ID_ANDROID }}
@@ -54,7 +55,7 @@ jobs:
       run: |
         rm -rf ./.git ./.github ./*
         ls -la ./
-        git clone ${{ secrets.REPO_URL }} --branch=${{ github.event.client_payload.branch }} --single --depth=1 ./
+        git clone ${{ secrets.REPO_URL }} --branch=test-branch-from-last-success --single --depth=1 ./
         git log -1
 
     - name: Install Node.js 12.x
