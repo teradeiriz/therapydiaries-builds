@@ -73,8 +73,7 @@ jobs:
 
     - name: Install packages
       run: yarn install --frozen-lockfile --cache-folder /tmp/cache/yarn
-    
-    
+
     - name: Install pods
       run: pod install
       working-directory: ios
