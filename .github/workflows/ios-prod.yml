@@ -1,10 +1,8 @@
 name: Publish iOS App to Test Flight
 
-on: push
- # FIXME on:
- #  repository_dispatch
- #    types: ['distribute-ipa']
-#  gem install fastlane bundler cocoapods
+on:
+  repository_dispatch:
+    types: ['publish-ios-to-test-flight']
 
 jobs:
   deploy_to_app_distribution:
@@ -18,10 +16,10 @@ jobs:
       env:
         USER_NAME: ${{ secrets.GITLAB_USER_NAME }}
         USER_EMAIL: ${{ secrets.GITLAB_USER_EMAIL }}
-        REPO_URL: ${{ secrets.REPO_URL }}
         SSH_KNOWN_HOST: ${{ secrets.SSH_KNOWN_HOST }}
         SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-        CURRENT_BRANCH: test-branch-from-last-success
+        CURRENT_BRANCH: ${{ github.event.client_payload.branch }}
+        REPO_NAME: ${{ secrets.REPO_NAME }}
         DATABASE_DEFAULT_ENCRYPTION_KEY: ${{ secrets.DATABASE_DEFAULT_ENCRYPTION_KEY }}
         APP_METRICA_API_KEY: ${{ secrets.APP_METRICA_API_KEY }}
         FASTLANE_USER: ${{ secrets.FASTLANE_USER }}
@@ -30,6 +28,7 @@ jobs:
         MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
         MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
         FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD: ${{ secrets.FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD }}
+        OAUTH_CLIENT_ID_ANDROID: ${{ secrets.OAUTH_CLIENT_ID_ANDROID }}
 
     - name: Configure git users
       run: |
@@ -53,7 +52,7 @@ jobs:
       run: |
         rm -rf ./.git ./.github ./*
         ls -la ./
-        git clone ${{ secrets.REPO_URL }} --branch=test-branch-from-last-success --single --depth=1 ./
+        git clone ${{ secrets.REPO_URL }} --branch=${{ github.event.client_payload.branch }} --single --depth=1 ./
         git log -1
 
     - name: Install Node.js 12.x
@@ -77,7 +76,6 @@ jobs:
       run: |
         bundle config path vendor/bundle
         bundle install --jobs 4 --retry 3
-        bundle update fastlane
 
     - name: Run fastlane line "fastlane ios beta" with PROD ENV variables
       run: bundle exec fastlane ios beta
@@ -91,5 +89,4 @@ jobs:
         APP_METRICA_API_KEY: ${{ secrets.APP_METRICA_API_KEY }}
         FASTLANE_USER: ${{ secrets.FASTLANE_USER }}
         FASTLANE_PASSWORD: ${{ secrets.FASTLANE_PASSWORD }}
-        CURRENT_BRANCH: test-branch-from-last-success
         FASTLANE_SESSION: ${{ secrets.FASTLANE_SESSION }}

@@ -6,21 +6,31 @@ on:
   repository_dispatch:
     types: ['publish-android-to-play-store']
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   build:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
     strategy:
       matrix:
         node-version: [12.x]
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
+
+    - name: Check all required variables
+      run: sh ./scripts/android-prod-check.sh
+      env:
+        USER_NAME: ${{ secrets.GITLAB_USER_NAME }}
+        USER_EMAIL: ${{ secrets.GITLAB_USER_EMAIL }}
+        SSH_KNOWN_HOST: ${{ secrets.SSH_KNOWN_HOST }}
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        CURRENT_BRANCH: ${{ github.event.client_payload.branch }}
+        REPO_NAME: ${{ secrets.REPO_NAME }}
+        ENCRYPT_PASSWORD: ${{ secrets.ENCRYPT_PASSWORD }}
+        DATABASE_DEFAULT_ENCRYPTION_KEY: ${{ secrets.DATABASE_DEFAULT_ENCRYPTION_KEY }}
+        OAUTH_CLIENT_ID_ANDROID: ${{ secrets.OAUTH_CLIENT_ID_ANDROID }}
+        APP_METRICA_API_KEY: ${{ secrets.APP_METRICA_API_KEY }}
+        BUMP_TYPE: ${{ github.event.client_payload.bump_type }}
 
     - name: Configure git users
       run: |

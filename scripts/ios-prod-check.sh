@@ -87,3 +87,9 @@ then
     echo "Please sure that FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD exists"
     exit 1
 fi
+
+if [[ -z "$OAUTH_CLIENT_ID_ANDROID" ]]
+then
+    echo "Please sure that OAUTH_CLIENT_ID_ANDROID exists"
+    exit 1
+fi
