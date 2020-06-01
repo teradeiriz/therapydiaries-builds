@@ -44,7 +44,7 @@ jobs:
 
     - name: Setup SSH keys and known_hosts
       env:
-         SSH_AUTH_SOCK: $SSH_AUTH_SOCK
+         SSH_AUTH_SOCK: /tmp/ssh_agent.sock
       run: |
           mkdir -p ~/.ssh
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
