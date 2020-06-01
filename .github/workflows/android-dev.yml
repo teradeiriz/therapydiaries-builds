@@ -48,7 +48,7 @@ jobs:
           echo "$SSH_PRIVATE_KEY" | tr -d '\r' > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan $SSH_KNOWN_HOST >> ~/.ssh/known_hosts
-          # echo "$SSH_AUTH_SOCK" | ssh-add – > /dev/null
+          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
           # ssh-add ~/.ssh/id_rsa
 
     - name: Get repository
