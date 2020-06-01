@@ -6,15 +6,19 @@ on:
   repository_dispatch:
     types: ['distribute-apk']
 
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
+  # This workflow contains a single job called "build"
   deploy_to_app_distribution:
     runs-on: ubuntu-latest
 
+    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
+    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
 
     - name: Check all required variables
-      run: sh ./scripts/android-dev-check.sh
+      run: sh ./scripts/check.sh
       env:
         USER_NAME: ${{ secrets.GITLAB_USER_NAME }}
         USER_EMAIL: ${{ secrets.GITLAB_USER_EMAIL }}
@@ -64,6 +68,7 @@ jobs:
         gpg --quiet --batch --yes --decrypt --passphrase="${{ secrets.ENCRYPT_PASSWORD }}" \
         --output ./android/keystores/google-private-key.json ./android/keystores/google-private-key.json.gpg
 
+
     - name: Install Node.js 12.x
       uses: actions/setup-node@v1
       with:
@@ -111,11 +116,13 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-gradle-
 
+
     - name: Run fastlane line "fastlane android buildapk" with PROD ENV variables
       run: bundle exec fastlane android buildapk
       env:
         SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         DATABASE_DEFAULT_ENCRYPTION_KEY: ${{ secrets.DATABASE_DEFAULT_ENCRYPTION_KEY }}
+        OAUTH_CLIENT_ID_ANDROID: ${{ secrets.OAUTH_CLIENT_ID_ANDROID }}
         APP_METRICA_API_KEY: ${{ secrets.APP_METRICA_API_KEY }}
         FIREBASEAPPDISTRO_APP: ${{ secrets.FIREBASE_APP_ID_ANDROID }}
         FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
