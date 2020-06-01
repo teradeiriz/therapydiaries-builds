@@ -61,6 +61,7 @@ jobs:
         git clone ${{ secrets.REPO_URL }} --branch=test-branch-from-last-success --single --depth=1 ./
         git log -1
 
+
     - name: Install Node.js 12.x
       uses: actions/setup-node@v1
       with:
