@@ -84,7 +84,7 @@ jobs:
         bundle install --jobs 4 --retry 3
 
     - name: Run fastlane line "fastlane ios deploy" with PROD ENV variables
-      run: bundle exec fastlane ios deploy
+      run: bundle exec fastlane ios beta
       env:
         SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
