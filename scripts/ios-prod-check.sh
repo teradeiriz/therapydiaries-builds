@@ -16,6 +16,12 @@ then
     exit 1
 fi
 
+if [[ -z "$REPO_URL" ]]
+then
+    echo "Please sure that REPO_URL exists"
+    exit 1
+fi
+
 if [[ -z "$SSH_KNOWN_HOST" ]]
 then
     echo "Please sure that SSH_KNOWN_HOST exists"

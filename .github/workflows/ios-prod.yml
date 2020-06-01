@@ -1,22 +1,16 @@
-name: Distribute IPA to Firebase App Distribution
+name: Publish iOS App to Test Flight
 
-# Controls when the action will run. Triggers the workflow on push or pull request
-# events but only for the master branch
 on: push
  # FIXME on:
  #  repository_dispatch
  #    types: ['distribute-ipa']
 #  gem install fastlane bundler cocoapods
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   deploy_to_app_distribution:
     runs-on: macos-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
 
     - name: Check all required variables
@@ -24,6 +18,7 @@ jobs:
       env:
         USER_NAME: ${{ secrets.GITLAB_USER_NAME }}
         USER_EMAIL: ${{ secrets.GITLAB_USER_EMAIL }}
+        REPO_URL: ${{ secrets.REPO_URL }}
         SSH_KNOWN_HOST: ${{ secrets.SSH_KNOWN_HOST }}
         SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         CURRENT_BRANCH: test-branch-from-last-success
@@ -61,7 +56,6 @@ jobs:
         git clone ${{ secrets.REPO_URL }} --branch=test-branch-from-last-success --single --depth=1 ./
         git log -1
 
-
     - name: Install Node.js 12.x
       uses: actions/setup-node@v1
       with:
@@ -84,6 +78,7 @@ jobs:
         bundle config path vendor/bundle
         bundle install --jobs 4 --retry 3
         bundle update fastlane
+
     - name: Run fastlane line "fastlane ios beta" with PROD ENV variables
       run: bundle exec fastlane ios beta
       env:
