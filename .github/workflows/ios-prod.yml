@@ -15,50 +15,49 @@ jobs:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
 
+    # https://help.github.com/en/actions/reference/workflow-commands-for-github-actions#setting-an-environment-variable
+    - name: Set environment variables that would be available between all jobs
+      run: |
+        echo "::set-env name=SSH_AUTH_SOCK::/tmp/ssh_agent.sock"
+        echo "::set-env name=USER_NAME::${{ secrets.GITLAB_USER_NAME }}"
+        echo "::set-env name=USER_EMAIL::${{ secrets.GITLAB_USER_EMAIL }}"
+        echo "::set-env name=SSH_KNOWN_HOST::${{ secrets.SSH_KNOWN_HOST }}"
+        echo "::set-env name=SSH_PRIVATE_KEY::${{ secrets.SSH_PRIVATE_KEY }}"
+        echo "::set-env name=CURRENT_BRANCH::${{ github.event.client_payload.branch }}"
+        echo "::set-env name=REPO_URL::${{ secrets.REPO_URL }}"
+        echo "::set-env name=DATABASE_DEFAULT_ENCRYPTION_KEY::${{ secrets.DATABASE_DEFAULT_ENCRYPTION_KEY }}"
+        echo "::set-env name=OAUTH_CLIENT_ID_ANDROID::${{ secrets.OAUTH_CLIENT_ID_ANDROID }}"
+        echo "::set-env name=APP_METRICA_API_KEY::${{ secrets.APP_METRICA_API_KEY }}"
+        echo "::set-env name=FASTLANE_USER::${{ secrets.FASTLANE_USER }}"
+        echo "::set-env name=FASTLANE_PASSWORD::${{ secrets.FASTLANE_PASSWORD }}"
+        echo "::set-env name=FASTLANE_SESSION::${{ secrets.FASTLANE_SESSION }}"
+        echo "::set-env name=MATCH_GIT_BASIC_AUTHORIZATION::${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}"
+        echo "::set-env name=MATCH_PASSWORD::${{ secrets.MATCH_PASSWORD }}"
+        echo "::set-env name=FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD::${{ secrets.FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD }}"
+        echo "::set-env name=BUMP_TYPE::${{ github.event.client_payload.bump_type }}
+
     - name: Check all required variables
       run: sh ./scripts/common-check.sh && sh ./scripts/ios-prod-check.sh
-      env:
-        USER_NAME: ${{ secrets.GITLAB_USER_NAME }}
-        USER_EMAIL: ${{ secrets.GITLAB_USER_EMAIL }}
-        SSH_KNOWN_HOST: ${{ secrets.SSH_KNOWN_HOST }}
-        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-        # CURRENT_BRANCH: ${{ github.event.client_payload.branch }}
-        CURRENT_BRANCH: test-branch-from-last-success
-        REPO_URL: ${{ secrets.REPO_URL }}
-        DATABASE_DEFAULT_ENCRYPTION_KEY: ${{ secrets.DATABASE_DEFAULT_ENCRYPTION_KEY }}
-        OAUTH_CLIENT_ID_ANDROID: ${{ secrets.OAUTH_CLIENT_ID_ANDROID }}
-        APP_METRICA_API_KEY: ${{ secrets.APP_METRICA_API_KEY }}
-        FASTLANE_USER: ${{ secrets.FASTLANE_USER }}
-        FASTLANE_PASSWORD: ${{ secrets.FASTLANE_PASSWORD }}
-        FASTLANE_SESSION: ${{ secrets.FASTLANE_SESSION }}
-        MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
-        MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-        FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD: ${{ secrets.FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD }}
-        BUMP_TYPE: "patch" # ${{ github.event.client_payload.bump_type }}
 
     - name: Configure git users
       run: |
-          git config --global user.name ${{ secrets.GITLAB_USER_NAME }}
-          git config --global user.email ${{ secrets.GITLAB_USER_EMAIL }}
+          git config --global user.name "$USER_NAME"
+          git config --global user.email "$USER_EMAIL"
 
     - name: Setup SSH keys and known_hosts
-      env:
-        SSH_AUTH_SOCK: /tmp/ssh_agent.sock
       run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan ${{ secrets.SSH_KNOWN_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan $SSH_KNOWN_HOST >> ~/.ssh/known_hosts
           ssh-agent -a $SSH_AUTH_SOCK > /dev/null
           ssh-add ~/.ssh/id_rsa
 
     - name: Get repository
-      env:
-        SSH_AUTH_SOCK: /tmp/ssh_agent.sock
       run: |
         rm -rf ./.git ./.github ./*
         ls -la ./
-        git clone ${{ secrets.REPO_URL }} --branch=test-branch-from-last-success --single --depth=1 ./
+        git clone "$REPO_URL" --branch="$CURRENT_BRANCH" --single --depth=1 ./
         git log -1
 
 
@@ -86,15 +85,3 @@ jobs:
 
     - name: Run fastlane line "fastlane ios deploy" with PROD ENV variables
       run: bundle exec fastlane ios deploy
-      env:
-        SSH_AUTH_SOCK: /tmp/ssh_agent.sock
-        MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
-        MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-        FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD: ${{ secrets.FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD }}
-        DATABASE_DEFAULT_ENCRYPTION_KEY: ${{ secrets.DATABASE_DEFAULT_ENCRYPTION_KEY }}
-        OAUTH_CLIENT_ID_ANDROID: ${{ secrets.OAUTH_CLIENT_ID_ANDROID }}
-        APP_METRICA_API_KEY: ${{ secrets.APP_METRICA_API_KEY }}
-        FASTLANE_USER: ${{ secrets.FASTLANE_USER }}
-        FASTLANE_PASSWORD: ${{ secrets.FASTLANE_PASSWORD }}
-        FASTLANE_SESSION: ${{ secrets.FASTLANE_SESSION }}
-        BUMP_TYPE: ${{ github.event.client_payload.bump_type }}
