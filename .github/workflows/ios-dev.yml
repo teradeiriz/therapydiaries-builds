@@ -16,21 +16,24 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Check all required variables
-      run: sh ./scripts/ios-dev-check.sh
+      run: sh ./scripts/common-check.sh && sh ./scripts/ios-dev-check.sh
       env:
         USER_NAME: ${{ secrets.GITLAB_USER_NAME }}
         USER_EMAIL: ${{ secrets.GITLAB_USER_EMAIL }}
         SSH_KNOWN_HOST: ${{ secrets.SSH_KNOWN_HOST }}
         SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         CURRENT_BRANCH: ${{ github.event.client_payload.branch }}
-        REPO_NAME: ${{ secrets.REPO_NAME }}
+        REPO_URL: ${{ secrets.REPO_URL }}
         DATABASE_DEFAULT_ENCRYPTION_KEY: ${{ secrets.DATABASE_DEFAULT_ENCRYPTION_KEY }}
+        OAUTH_CLIENT_ID_ANDROID: ${{ secrets.OAUTH_CLIENT_ID_ANDROID }}
         APP_METRICA_API_KEY: ${{ secrets.APP_METRICA_API_KEY }}
-        FIREBASEAPPDISTRO_APP: ${{ secrets.FIREBASE_APP_ID_IOS }}
-        FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
         FASTLANE_USER: ${{ secrets.FASTLANE_USER }}
         FASTLANE_PASSWORD: ${{ secrets.FASTLANE_PASSWORD }}
         FASTLANE_SESSION: ${{ secrets.FASTLANE_SESSION }}
+        MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+        MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+        FIREBASEAPPDISTRO_APP: ${{ secrets.FIREBASE_APP_ID_IOS }}
+        FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
 
     - name: Configure git users
       run: |

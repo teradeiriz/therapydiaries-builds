@@ -18,18 +18,18 @@ jobs:
     - uses: actions/checkout@v2
 
     - name: Check all required variables
-      run: sh ./scripts/android-prod-check.sh
+      run: sh ./scripts/common-check.sh && sh ./scripts/android-prod-check.sh
       env:
         USER_NAME: ${{ secrets.GITLAB_USER_NAME }}
         USER_EMAIL: ${{ secrets.GITLAB_USER_EMAIL }}
         SSH_KNOWN_HOST: ${{ secrets.SSH_KNOWN_HOST }}
         SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         CURRENT_BRANCH: ${{ github.event.client_payload.branch }}
-        REPO_NAME: ${{ secrets.REPO_NAME }}
-        ENCRYPT_PASSWORD: ${{ secrets.ENCRYPT_PASSWORD }}
+        REPO_URL: ${{ secrets.REPO_URL }}
         DATABASE_DEFAULT_ENCRYPTION_KEY: ${{ secrets.DATABASE_DEFAULT_ENCRYPTION_KEY }}
         OAUTH_CLIENT_ID_ANDROID: ${{ secrets.OAUTH_CLIENT_ID_ANDROID }}
         APP_METRICA_API_KEY: ${{ secrets.APP_METRICA_API_KEY }}
+        ENCRYPT_PASSWORD: ${{ secrets.ENCRYPT_PASSWORD }}
         BUMP_TYPE: ${{ github.event.client_payload.bump_type }}
 
     - name: Configure git users
@@ -50,8 +50,10 @@ jobs:
       env:
         SSH_AUTH_SOCK: /tmp/ssh_agent.sock
       run: |
-        git clone ${{ secrets.REPO_URL }} --branch=${{ github.event.client_payload.branch }} --single --depth=1
-        cd ${{ secrets.REPO_NAME }}/
+        rm -rf ./.git ./.github ./*
+        ls -la ./
+        git clone ${{ secrets.REPO_URL }} --branch=${{ github.event.client_payload.branch }} --single --depth=1 ./
+        git log -1
 
     - name: Install Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v1
@@ -63,23 +65,19 @@ jobs:
 
     - name: Install Fastlane
       run: bundle install
-      working-directory: ${{ secrets.REPO_NAME }}
 
     - name: Install packages
       run: |
         yarn --version
         yarn install --frozen-lockfile
-      working-directory: ${{ secrets.REPO_NAME }}
     
     - name: Decrypt keystore and Google Credentials
       run: sh ../scripts/android-gpg-decrypt.sh
       env:
         ENCRYPT_PASSWORD: ${{ secrets.ENCRYPT_PASSWORD }}
-      working-directory: ${{ secrets.REPO_NAME }}
 
     - name: Run fastlane line "fastlane android deploy" with PROD ENV variables
       run: bundle exec fastlane android deploy
-      working-directory: ${{ secrets.REPO_NAME }}
       env:
         SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         DATABASE_DEFAULT_ENCRYPTION_KEY: ${{ secrets.DATABASE_DEFAULT_ENCRYPTION_KEY }}
