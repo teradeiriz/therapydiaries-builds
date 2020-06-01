@@ -23,7 +23,7 @@ jobs:
         SSH_KNOWN_HOST: ${{ secrets.SSH_KNOWN_HOST }}
         SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         # CURRENT_BRANCH: ${{ github.event.client_payload.branch }}
-        CURRENT_BRANCH: test
+        CURRENT_BRANCH: test-branch-from-last-success
         REPO_URL: ${{ secrets.REPO_URL }}
         DATABASE_DEFAULT_ENCRYPTION_KEY: ${{ secrets.DATABASE_DEFAULT_ENCRYPTION_KEY }}
         OAUTH_CLIENT_ID_ANDROID: ${{ secrets.OAUTH_CLIENT_ID_ANDROID }}
@@ -58,7 +58,7 @@ jobs:
       run: |
         rm -rf ./.git ./.github ./*
         ls -la ./
-        git clone ${{ secrets.REPO_URL }} --branch=test --single --depth=1 ./
+        git clone ${{ secrets.REPO_URL }} --branch=test-branch-from-last-success --single --depth=1 ./
         git log -1
 
     - name: Install Node.js 12.x
@@ -84,7 +84,7 @@ jobs:
         bundle install --jobs 4 --retry 3
 
     - name: Run fastlane line "fastlane ios deploy" with PROD ENV variables
-      run: bundle exec fastlane ios beta
+      run: bundle exec fastlane ios deploy
       env:
         SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
