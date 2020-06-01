@@ -1,8 +1,8 @@
-name: Publish iOS App to Test Flight
+name: Deploy iOS App to Test Flight
 
 on:
   repository_dispatch:
-    types: ['publish-ios-to-test-flight']
+    types: ['deploy-ios-to-test-flight']
 
 jobs:
   deploy_to_app_distribution:
@@ -78,8 +78,8 @@ jobs:
         bundle config path vendor/bundle
         bundle install --jobs 4 --retry 3
 
-    - name: Run fastlane line "fastlane ios beta" with PROD ENV variables
-      run: bundle exec fastlane ios beta
+    - name: Run fastlane line "fastlane ios deploy" with PROD ENV variables
+      run: bundle exec fastlane ios deploy
       env:
         SSH_AUTH_SOCK: /tmp/ssh_agent.sock
         MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
