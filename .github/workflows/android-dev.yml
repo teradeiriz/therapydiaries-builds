@@ -46,7 +46,7 @@ jobs:
       run: |
           mkdir -p ~/.ssh
           ssh-keyscan $SSH_KNOWN_HOST >> ~/.ssh/known_hosts
-          ssh-agent -a "$SSH_AUTH_SOCK" > /dev/null
+          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
           ssh-add - <<< "$SSH_PRIVATE_KEY"
 
     - name: Get repository
