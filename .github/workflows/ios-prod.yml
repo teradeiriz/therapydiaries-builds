@@ -2,10 +2,9 @@ name: Deploy iOS App to Test Flight
 
 # Controls when the action will run. Triggers the workflow on push or pull request
 # events but only for the master branch
-on: push
-# on:
-#   repository_dispatch:
-#     types: ['deploy-ios-to-test-flight']
+on:
+  repository_dispatch:
+    types: ['deploy-ios-to-test-flight']
 
 jobs:
   deploy_to_app_distribution:
