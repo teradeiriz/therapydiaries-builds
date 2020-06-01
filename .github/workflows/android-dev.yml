@@ -69,14 +69,10 @@ jobs:
         gpg --quiet --batch --yes --decrypt --passphrase="$ENCRYPT_PASSWORD" \
         --output ./android/keystores/google-private-key.json ./android/keystores/google-private-key.json.gpg
 
-
     - name: Install Node.js 12.x
       uses: actions/setup-node@v1
       with:
         node-version: 12.x
-
-    - name: Check all required environment variables for bundle js
-      run: yarn check-variables
 
     - name: Install Ruby 2.x
       uses: actions/setup-ruby@v1
