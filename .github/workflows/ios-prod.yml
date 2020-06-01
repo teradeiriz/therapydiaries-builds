@@ -1,8 +1,9 @@
 name: Deploy iOS App to Test Flight
 
-on:
-  repository_dispatch:
-    types: ['deploy-ios-to-test-flight']
+on: push
+# on:
+#   repository_dispatch:
+#     types: ['deploy-ios-to-test-flight']
 
 jobs:
   deploy_to_app_distribution:
