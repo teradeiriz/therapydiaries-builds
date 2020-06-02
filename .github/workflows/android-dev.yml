@@ -2,9 +2,9 @@ name: Distribute APK App to Firebase App Distribution
 
 # Controls when the action will run. Triggers the workflow on push or pull request
 # events but only for the master branch
-on: push
-  # repository_dispatch:
-  #   types: ['distribute-apk']
+on:
+  repository_dispatch:
+    types: ['distribute-apk']
 
 jobs:
   deploy_to_app_distribution:
@@ -45,7 +45,7 @@ jobs:
     - name: Setup SSH keys and known_hosts
       run: |
           mkdir -p ~/.ssh
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan $SSH_KNOWN_HOST >> ~/.ssh/known_hosts
           ssh-agent -a $SSH_AUTH_SOCK > /dev/null
