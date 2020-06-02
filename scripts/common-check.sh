@@ -4,6 +4,12 @@ set -e
 # print all env variables
 # printenv | cat
 
+if [[ -z "$SSH_AUTH_SOCK" ]]
+then
+    echo "Please sure that SSH_AUTH_SOCK exists"
+    exit 1
+fi
+
 if [[ -z "$USER_NAME" ]]
 then
     echo "Please sure that USER_NAME exists"
