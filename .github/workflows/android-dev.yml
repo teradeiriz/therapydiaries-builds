@@ -2,9 +2,9 @@ name: Distribute APK App to Firebase App Distribution
 
 # Controls when the action will run. Triggers the workflow on push or pull request
 # events but only for the master branch
-on: push
-  # repository_dispatch:
-  #   types: ['distribute-apk']
+on:
+  repository_dispatch:
+    types: ['distribute-apk']
 
 jobs:
   deploy_to_app_distribution:
