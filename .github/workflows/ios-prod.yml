@@ -33,7 +33,7 @@ jobs:
         echo "::set-env name=MATCH_GIT_BASIC_AUTHORIZATION::${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}"
         echo "::set-env name=MATCH_PASSWORD::${{ secrets.MATCH_PASSWORD }}"
         echo "::set-env name=FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD::${{ secrets.FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD }}"
-        echo "::set-env name=BUMP_TYPE::${{ github.event.client_payload.bump_type }}
+        echo "::set-env name=BUMP_TYPE::${{ github.event.client_payload.bump_type }}"
 
     - name: Check all required variables
       run: sh ./scripts/common-check.sh && sh ./scripts/ios-prod-check.sh
