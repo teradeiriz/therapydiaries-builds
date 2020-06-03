@@ -112,5 +112,5 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-gradle-
 
-    - name: Run fastlane line "fastlane android buildapk" with PROD ENV variables
-      run: bundle exec fastlane android buildapk
+    - name: Run fastlane line "fastlane android distribute" with PROD ENV variables
+      run: bundle exec fastlane android distribute
