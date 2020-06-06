@@ -32,7 +32,7 @@ jobs:
         echo "::set-env name=DATABASE_DEFAULT_ENCRYPTION_KEY::${{ secrets.DATABASE_DEFAULT_ENCRYPTION_KEY }}"
         echo "::set-env name=OAUTH_CLIENT_ID_ANDROID::${{ secrets.OAUTH_CLIENT_ID_ANDROID }}"
         echo "::set-env name=APP_METRICA_API_KEY::${{ secrets.APP_METRICA_API_KEY }}"
-        echo "::set-env name=APP_METRICA_API_KEY::${{ github.event.client_payload.bump_type }}
+        echo "::set-env name=APP_METRICA_API_KEY::${{ github.event.client_payload.bump_type }}"
 
     - name: Check all required variables
       run: sh ./scripts/common-check.sh && sh ./scripts/android-prod-check.sh
