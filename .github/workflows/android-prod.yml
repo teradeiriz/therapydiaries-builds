@@ -75,7 +75,11 @@ jobs:
         yarn install --frozen-lockfile
     
     - name: Decrypt keystore and Google Credentials
-      run: sh ../scripts/android-gpg-decrypt.sh
+      run: |
+        gpg --quiet --batch --yes --decrypt --passphrase="$ENCRYPT_PASSWORD" \
+        --output ./android/keystores/release.keystore ./android/keystores/release.keystore.gpg
+        gpg --quiet --batch --yes --decrypt --passphrase="$ENCRYPT_PASSWORD" \
+        --output ./android/keystores/google-private-key.json ./android/keystores/google-private-key.json.gpg
 
     - name: Run fastlane line "fastlane android deploy" with PROD ENV variables
       run: bundle exec fastlane android deploy
