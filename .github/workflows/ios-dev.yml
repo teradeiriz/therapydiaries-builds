@@ -40,9 +40,6 @@ jobs:
     - name: Check all required variables
       run: sh ./scripts/common-check.sh && sh ./scripts/ios-dev-check.sh
 
-    - name: Notify gitlab
-      run: ./infrastructure/gitlab/status.sh "state=running"
-
     - name: Configure git users
       run: |
           git config --global user.name "$USER_NAME"
@@ -63,6 +60,9 @@ jobs:
         ls -la ./
         git clone "$REPO_URL" --branch="$CURRENT_BRANCH" --single --depth=1 ./
         git log -1
+
+    - name: Notify gitlab
+      run: ./infrastructure/gitlab/status.sh "state=running"
 
     - name: Install Node.js 12.x
       uses: actions/setup-node@v1

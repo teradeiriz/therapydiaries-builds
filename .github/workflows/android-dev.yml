@@ -36,9 +36,6 @@ jobs:
     - name: Check all required variables
       run: sh ./scripts/common-check.sh && sh ./scripts/android-dev-check.sh
 
-    - name: Notify gitlab
-      run: ./infrastructure/gitlab/status.sh "state=running"
-
     - name: Fix error 'ENOSPC - System limit for number of file watchers reached'
       run: echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
 
@@ -62,6 +59,9 @@ jobs:
         ls -la ./
         git clone "$REPO_URL" --branch="develop" --single --depth=1 ./
         git log -1
+
+    - name: Notify gitlab
+      run: ./infrastructure/gitlab/status.sh "state=running"
 
     - name: Decrypt keystore and Google Credentials
       run: |
