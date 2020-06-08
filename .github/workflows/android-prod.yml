@@ -7,7 +7,7 @@ on:
     types: ['deploy-android-to-play-store']
 
 jobs:
-  build:
+  deploy-android-to-play-store:
     runs-on: ubuntu-latest
 
     strategy:
@@ -27,12 +27,15 @@ jobs:
         echo "::set-env name=SSH_KNOWN_HOST::${{ secrets.SSH_KNOWN_HOST }}"
         echo "::set-env name=SSH_PRIVATE_KEY::${{ secrets.SSH_PRIVATE_KEY }}"
         echo "::set-env name=CURRENT_BRANCH::${{ github.event.client_payload.branch }}"
+        echo "::set-env name=GIT_LAB_COMMIT_SHA::${{ github.event.client_payload.commit_sha }}"
+        echo "::set-env name=GIT_LAB_PIPELINE_ID::${{ github.event.client_payload.pipeline_id }}"
         echo "::set-env name=REPO_URL::${{ secrets.REPO_URL }}"
         echo "::set-env name=ENCRYPT_PASSWORD::${{ secrets.ENCRYPT_PASSWORD }}"
         echo "::set-env name=DATABASE_DEFAULT_ENCRYPTION_KEY::${{ secrets.DATABASE_DEFAULT_ENCRYPTION_KEY }}"
         echo "::set-env name=OAUTH_CLIENT_ID_ANDROID::${{ secrets.OAUTH_CLIENT_ID_ANDROID }}"
         echo "::set-env name=APP_METRICA_API_KEY::${{ secrets.APP_METRICA_API_KEY }}"
         echo "::set-env name=BUMP_TYPE::${{ github.event.client_payload.bump_type }}"
+        echo "::set-env name=GIT_LAB_ACCESS_TOKEN::${{ secrets.GIT_LAB_ACCESS_TOKEN }}"
 
     - name: Check all required variables
       run: sh ./scripts/common-check.sh && sh ./scripts/android-prod-check.sh
@@ -50,13 +53,17 @@ jobs:
           ssh-keyscan $SSH_KNOWN_HOST >> ~/.ssh/known_hosts
           ssh-agent -a $SSH_AUTH_SOCK > /dev/null
           ssh-add ~/.ssh/id_rsa
-    
+
     - name: Get repository
       run: |
         rm -rf ./.git ./.github ./*
         ls -la ./
         git clone "$REPO_URL" --branch="$CURRENT_BRANCH" --single --depth=1 ./
         git log -1
+
+    - name: Notify gitlab
+      run: ./infrastructure/gitlab/status.sh "state=running"
+
 
     - name: Install Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v1
@@ -73,7 +80,7 @@ jobs:
       run: |
         yarn --version
         yarn install --frozen-lockfile
-    
+
     - name: Decrypt keystore and Google Credentials
       run: |
         gpg --quiet --batch --yes --decrypt --passphrase="$ENCRYPT_PASSWORD" \
@@ -83,3 +90,14 @@ jobs:
 
     - name: Run fastlane line "fastlane android deploy" with PROD ENV variables
       run: bundle exec fastlane android deploy
+
+    - name: The job has cancelled
+      if: ${{ cancelled() }}
+      run: ./infrastructure/gitlab/status.sh "state=canceled"
+
+    - name: The job has failed
+      if: ${{ failure() }}
+      run: ./infrastructure/gitlab/status.sh "state=failed"
+
+    - name: The job has success
+      run: ./infrastructure/gitlab/status.sh "state=success"

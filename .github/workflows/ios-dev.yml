@@ -7,7 +7,7 @@ on:
     types: ['distribute-ipa']
 
 jobs:
-  deploy_to_app_distribution:
+  distribute-ipa:
     runs-on: macos-latest
 
     steps:
@@ -24,6 +24,7 @@ jobs:
         echo "::set-env name=SSH_PRIVATE_KEY::${{ secrets.SSH_PRIVATE_KEY }}"
         echo "::set-env name=CURRENT_BRANCH::${{ github.event.client_payload.branch }}"
         echo "::set-env name=GIT_LAB_COMMIT_SHA::${{ github.event.client_payload.commit_sha }}"
+        echo "::set-env name=GIT_LAB_PIPELINE_ID::${{ github.event.client_payload.pipeline_id }}"
         echo "::set-env name=REPO_URL::${{ secrets.REPO_URL }}"
         echo "::set-env name=DATABASE_DEFAULT_ENCRYPTION_KEY::${{ secrets.DATABASE_DEFAULT_ENCRYPTION_KEY }}"
         echo "::set-env name=OAUTH_CLIENT_ID_ANDROID::${{ secrets.OAUTH_CLIENT_ID_ANDROID }}"
