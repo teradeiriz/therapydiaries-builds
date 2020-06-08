@@ -23,6 +23,7 @@ jobs:
         echo "::set-env name=SSH_KNOWN_HOST::${{ secrets.SSH_KNOWN_HOST }}"
         echo "::set-env name=SSH_PRIVATE_KEY::${{ secrets.SSH_PRIVATE_KEY }}"
         echo "::set-env name=CURRENT_BRANCH::${{ github.event.client_payload.branch }}"
+        echo "::set-env name=GIT_LAB_COMMIT_SHA::${{ github.event.client_payload.commit_sha }}"
         echo "::set-env name=REPO_URL::${{ secrets.REPO_URL }}"
         echo "::set-env name=DATABASE_DEFAULT_ENCRYPTION_KEY::${{ secrets.DATABASE_DEFAULT_ENCRYPTION_KEY }}"
         echo "::set-env name=OAUTH_CLIENT_ID_ANDROID::${{ secrets.OAUTH_CLIENT_ID_ANDROID }}"
@@ -34,9 +35,13 @@ jobs:
         echo "::set-env name=FASTLANE_SESSION::${{ secrets.FASTLANE_SESSION }}"
         echo "::set-env name=MATCH_GIT_BASIC_AUTHORIZATION::${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}"
         echo "::set-env name=MATCH_PASSWORD::${{ secrets.MATCH_PASSWORD }}"
+        echo "::set-env name=GIT_LAB_ACCESS_TOKEN::${{ secrets.GIT_LAB_ACCESS_TOKEN }}"
 
     - name: Check all required variables
       run: sh ./scripts/common-check.sh && sh ./scripts/ios-dev-check.sh
+
+    - name: Notify gitlab
+      run: ./infrastructure/gitlab/status.sh "state=running"
 
     - name: Configure git users
       run: |
@@ -63,7 +68,7 @@ jobs:
       uses: actions/setup-node@v1
       with:
         node-version: 12.x
-    
+
     - name: Install Ruby 2.x
       uses: actions/setup-ruby@v1
       with:
@@ -77,7 +82,7 @@ jobs:
 
     - name: Install packages
       run: yarn install --frozen-lockfile --cache-folder /tmp/cache/yarn
-    
+
     - name: Install pods
       run: pod install
       working-directory: ios
@@ -89,3 +94,14 @@ jobs:
 
     - name: Run fastlane line "fastlane ios distribute" with PROD ENV variables
       run: bundle exec fastlane ios distribute
+
+    - name: The job has cancelled
+      if: ${{ cancelled() }}
+      run: ./infrastructure/gitlab/status.sh "state=canceled"
+
+    - name: The job has failed
+      if: ${{ failure() }}
+      run: ./infrastructure/gitlab/status.sh "state=failed"
+
+    - name: The job has success
+      run: ./infrastructure/gitlab/status.sh "state=success"
