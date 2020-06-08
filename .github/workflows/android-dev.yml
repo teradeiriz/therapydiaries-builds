@@ -57,7 +57,7 @@ jobs:
       run: |
         rm -rf ./.git ./.github ./*
         ls -la ./
-        git clone "$REPO_URL" --branch="develop" --single --depth=1 ./
+        git clone "$REPO_URL" --branch="$CURRENT_BRANCH" --single --depth=1 ./
         git log -1
 
     - name: Notify gitlab
