@@ -38,7 +38,8 @@ jobs:
         echo "::set-env name=MATCH_GIT_BASIC_AUTHORIZATION::${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}"
         echo "::set-env name=MATCH_PASSWORD::${{ secrets.MATCH_PASSWORD }}"
         echo "::set-env name=GIT_LAB_ACCESS_TOKEN::${{ secrets.GIT_LAB_ACCESS_TOKEN }}"
-        echo ${{ github.job }}
+        echo ${{ github.run_id }}
+        echo ${{ github.run_number }}
 
     - name: Check all required variables
       run: sh ./scripts/common-check.sh && sh ./scripts/ios-dev-check.sh
