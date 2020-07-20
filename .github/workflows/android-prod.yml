@@ -40,6 +40,9 @@ jobs:
     - name: Check all required variables
       run: sh ./scripts/common-check.sh && sh ./scripts/android-prod-check.sh
 
+    - name: Fix error 'ENOSPC - System limit for number of file watchers reached'
+      run: echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
+
     - name: Configure git users
       run: |
           git config --global user.name "$USER_NAME"
