@@ -57,7 +57,7 @@ jobs:
 
     - name: Get repository
       run: |
-        rm -rf ./.git ./.github ./*
+        rm -rf ./.git ./.github ./.gitignore ./*
         ls -la ./
         git clone "$REPO_URL" --branch="$CURRENT_BRANCH" --single --depth=1 ./
         git log -1
