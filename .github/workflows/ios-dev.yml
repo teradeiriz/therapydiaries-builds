@@ -65,7 +65,7 @@ jobs:
         git log -1
 
     - name: Notify gitlab
-      run: ./infrastructure/gitlab/status.sh "state=running"
+      run: ./infrastructure/gitlab/status.sh "state=running&description=$GITHUB_RUN_ID"
 
     - name: Install Node.js 12.x
       uses: actions/setup-node@v1
