@@ -33,6 +33,8 @@ jobs:
         echo "::set-env name=FIREBASEAPPDISTRO_APP::${{ secrets.FIREBASE_APP_ID_ANDROID }}"
         echo "::set-env name=FIREBASE_TOKEN::${{ secrets.FIREBASE_TOKEN }}"
         echo "::set-env name=GIT_LAB_ACCESS_TOKEN::${{ secrets.GIT_LAB_ACCESS_TOKEN }}"
+#        it is needed for checks in frontend part of the code
+        echo "::set-env name=OAUTH_CLIENT_ID_IOS::${{ secrets.OAUTH_CLIENT_ID_IOS_STAGING }}"
 
     - name: Check all required variables
       run: sh ./scripts/common-check.sh && sh ./scripts/android-dev-check.sh

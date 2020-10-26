@@ -36,6 +36,8 @@ jobs:
         echo "::set-env name=APP_METRICA_API_KEY::${{ secrets.APP_METRICA_API_KEY }}"
         echo "::set-env name=BUMP_TYPE::${{ github.event.client_payload.bump_type }}"
         echo "::set-env name=GIT_LAB_ACCESS_TOKEN::${{ secrets.GIT_LAB_ACCESS_TOKEN }}"
+#        it is needed for checks in frontend part of the code
+        echo "::set-env name=OAUTH_CLIENT_ID_IOS::${{ secrets.OAUTH_CLIENT_ID_IOS_STAGING }}"
 
     - name: Check all required variables
       run: sh ./scripts/common-check.sh && sh ./scripts/android-prod-check.sh
