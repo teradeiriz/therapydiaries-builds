@@ -95,6 +95,11 @@ jobs:
     - name: Install packages
       run: yarn install --frozen-lockfile
 
+    - name: Install Ruby 2.x
+      uses: actions/setup-ruby@v1
+      with:
+        ruby-version: '2.x'
+
     # https://github.com/actions/cache/blob/main/examples.md#ruby---bundler
     - name: Restore ruby bundle cache
       uses: actions/cache@master
