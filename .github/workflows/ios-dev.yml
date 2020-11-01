@@ -84,14 +84,9 @@ jobs:
       shell: bash
 
       # Yarn Cache: https://github.com/actions/cache/blob/master/examples.md#node---yarn
-    - name: Get yarn cache directory path
-      id: yarn-cache-dir-path
-      run: echo "::set-output name=dir::$(yarn cache dir)"
-
-    - name: Restore Yarn Cache
-      uses: actions/cache@master
+    - uses: actions/cache@master
       with:
-        path: ${{ steps.yarn-cache-dir-path.outputs.dir }}
+        path: node_modules
         key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
         restore-keys: |
           ${{ runner.os }}-yarn-
@@ -102,7 +97,7 @@ jobs:
     # CocoaPods Cache https://github.com/actions/cache/blob/main/examples.md#swift-objective-c---cocoapods
     - uses: actions/cache@master
       with:
-        path: ios/Pods
+        path: $HOME/Library/Caches/CocoaPods
         key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
         restore-keys: |
           ${{ runner.os }}-pods-
@@ -112,8 +107,7 @@ jobs:
       working-directory: ios
 
       # Ruby Bundle Cache https://github.com/actions/cache/blob/main/examples.md#ruby---bundler
-    - name: Restore ruby bundle cache
-      uses: actions/cache@master
+    - uses: actions/cache@master
       with:
         path: vendor/bundle
         key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
