@@ -80,8 +80,7 @@ jobs:
         sudo chmod +rx "/usr/local/bin/firebase"
 
     # Yarn Cache: https://github.com/actions/cache/blob/master/examples.md#node---yarn
-    - name: Restore Yarn Cache
-      uses: actions/cache@master
+    - uses: actions/cache@master
       with:
         path: node_modules
         key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
@@ -97,8 +96,7 @@ jobs:
         ruby-version: '2.x'
 
     # https://github.com/actions/cache/blob/main/examples.md#ruby---bundler
-    - name: Restore ruby bundle cache
-      uses: actions/cache@master
+    - uses: actions/cache@master
       with:
         path: vendor/bundle
         key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
@@ -111,8 +109,7 @@ jobs:
         bundle install --jobs 4 --retry 3
 
     # Gradle Cache https://github.com/actions/cache/blob/main/examples.md#java---gradle
-    - name: Restore Gradle cache
-      uses: actions/cache@master
+    - uses: actions/cache@master
       with:
         path: |
           ~/.gradle/caches
