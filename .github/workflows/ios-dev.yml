@@ -97,15 +97,24 @@ jobs:
     # CocoaPods Cache https://github.com/actions/cache/blob/main/examples.md#swift-objective-c---cocoapods
     - uses: actions/cache@master
       with:
-        path: $HOME/Library/Caches/CocoaPods
+        path: ~/Library/Caches/CocoaPods
         key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
         restore-keys: |
           ${{ runner.os }}-pods-
+    - uses: actions/cache@master
+      with:
+        path: ~/.cocoapods
+        key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-pods-
+
+    - run: ls ~/Library/Caches/CocoaPods/Pods || echo 'ops'
 
     - name: Install pods
       run: pod install
       working-directory: ios
 
+    - run: ls ~/Library/Caches/CocoaPods/Pods || echo 'ops'
       # Ruby Bundle Cache https://github.com/actions/cache/blob/main/examples.md#ruby---bundler
     - uses: actions/cache@master
       with:
@@ -121,6 +130,15 @@ jobs:
 
     - name: Run fastlane line "fastlane ios distribute" with PROD ENV variables
       run: bundle exec fastlane ios distribute
+
+    - run: ls ~/Library/Developer/Xcode/DerivedData || echo 'ops'
+    - uses: actions/cache@master
+      with:
+        path: ~/Library/Developer/Xcode/DerivedData
+        key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-pods-
+    - run: ls ~/Library/Developer/Xcode/DerivedData || echo 'ops'
 
     - name: The job has cancelled
       if: ${{ cancelled() }}
