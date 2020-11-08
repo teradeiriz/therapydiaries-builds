@@ -18,23 +18,23 @@ jobs:
     # OAUTH_CLIENT_ID_IOS is needed for checks in frontend part of the code
     - name: Set environment variables that would be available between all jobs
       run: |
-        echo "::set-env name=SSH_AUTH_SOCK::/tmp/ssh_agent.sock"
-        echo "::set-env name=USER_NAME::${{ secrets.GITLAB_USER_NAME }}"
-        echo "::set-env name=USER_EMAIL::${{ secrets.GITLAB_USER_EMAIL }}"
-        echo "::set-env name=SSH_KNOWN_HOST::${{ secrets.SSH_KNOWN_HOST }}"
-        echo "::set-env name=SSH_PRIVATE_KEY::${{ secrets.SSH_PRIVATE_KEY }}"
-        echo "::set-env name=CURRENT_BRANCH::${{ github.event.client_payload.branch }}"
-        echo "::set-env name=GIT_LAB_COMMIT_SHA::${{ github.event.client_payload.commit_sha }}"
-        echo "::set-env name=GIT_LAB_PIPELINE_ID::${{ github.event.client_payload.pipeline_id }}"
-        echo "::set-env name=REPO_URL::${{ secrets.REPO_URL }}"
-        echo "::set-env name=ENCRYPT_PASSWORD::${{ secrets.ENCRYPT_PASSWORD }}"
-        echo "::set-env name=DATABASE_DEFAULT_ENCRYPTION_KEY::${{ secrets.DATABASE_DEFAULT_ENCRYPTION_KEY }}"
-        echo "::set-env name=OAUTH_CLIENT_ID_ANDROID::${{ secrets.OAUTH_CLIENT_ID_ANDROID_STAGING }}"
-        echo "::set-env name=APP_METRICA_API_KEY::${{ secrets.APP_METRICA_API_KEY_STAGING }}"
-        echo "::set-env name=FIREBASEAPPDISTRO_APP::${{ secrets.FIREBASE_APP_ID_ANDROID }}"
-        echo "::set-env name=FIREBASE_TOKEN::${{ secrets.FIREBASE_TOKEN }}"
-        echo "::set-env name=GIT_LAB_ACCESS_TOKEN::${{ secrets.GIT_LAB_ACCESS_TOKEN }}"
-        echo "::set-env name=OAUTH_CLIENT_ID_IOS::${{ secrets.OAUTH_CLIENT_ID_IOS_STAGING }}"
+        echo "SSH_AUTH_SOCK=/tmp/ssh_agent.sock" >> $GITHUB_ENV
+        echo "USER_NAME=${{ secrets.GITLAB_USER_NAME }}" >> $GITHUB_ENV
+        echo "USER_EMAIL=${{ secrets.GITLAB_USER_EMAIL }}" >> $GITHUB_ENV
+        echo "SSH_KNOWN_HOST=${{ secrets.SSH_KNOWN_HOST }}" >> $GITHUB_ENV
+        echo "SSH_PRIVATE_KEY=${{ secrets.SSH_PRIVATE_KEY }}" >> $GITHUB_ENV
+        echo "CURRENT_BRANCH=${{ github.event.client_payload.branch }}" >> $GITHUB_ENV
+        echo "GIT_LAB_COMMIT_SHA=${{ github.event.client_payload.commit_sha }}" >> $GITHUB_ENV
+        echo "GIT_LAB_PIPELINE_ID=${{ github.event.client_payload.pipeline_id }}" >> $GITHUB_ENV
+        echo "REPO_URL=${{ secrets.REPO_URL }}" >> $GITHUB_ENV
+        echo "ENCRYPT_PASSWORD=${{ secrets.ENCRYPT_PASSWORD }}" >> $GITHUB_ENV
+        echo "DATABASE_DEFAULT_ENCRYPTION_KEY=${{ secrets.DATABASE_DEFAULT_ENCRYPTION_KEY }}" >> $GITHUB_ENV
+        echo "OAUTH_CLIENT_ID_ANDROID=${{ secrets.OAUTH_CLIENT_ID_ANDROID_STAGING }}" >> $GITHUB_ENV
+        echo "APP_METRICA_API_KEY=${{ secrets.APP_METRICA_API_KEY_STAGING }}" >> $GITHUB_ENV
+        echo "FIREBASEAPPDISTRO_APP=${{ secrets.FIREBASE_APP_ID_ANDROID }}" >> $GITHUB_ENV
+        echo "FIREBASE_TOKEN=${{ secrets.FIREBASE_TOKEN }}" >> $GITHUB_ENV
+        echo "GIT_LAB_ACCESS_TOKEN=${{ secrets.GIT_LAB_ACCESS_TOKEN }}" >> $GITHUB_ENV
+        echo "OAUTH_CLIENT_ID_IOS=${{ secrets.OAUTH_CLIENT_ID_IOS_STAGING }}" >> $GITHUB_ENV
 
     - name: Check all required variables
       run: sh ./scripts/common-check.sh && sh ./scripts/android-dev-check.sh
@@ -79,34 +79,30 @@ jobs:
         sudo curl -o "/usr/local/bin/firebase" -L --progress-bar "https://firebase.tools/bin/linux/latest"
         sudo chmod +rx "/usr/local/bin/firebase"
 
-    # Yarn Cache: https://github.com/actions/cache/blob/master/examples.md#node---yarn
     - uses: actions/cache@master
+      id: yarn_cache
       with:
         path: node_modules
         key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-yarn-
 
-    - name: Install packages
-      run: yarn install --frozen-lockfile
+    - run: yarn install --frozen-lockfile
+      if: steps.yarn_cache.outputs.cache-hit != 'true'
 
     - name: Install Ruby 2.x
       uses: actions/setup-ruby@v1
       with:
         ruby-version: '2.x'
 
-    # https://github.com/actions/cache/blob/main/examples.md#ruby---bundler
     - uses: actions/cache@master
+      id: ruby_cache
       with:
         path: vendor/bundle
         key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-gems-
 
-    - name: Install gem dependencies
-      run: |
+    - run: |
         bundle config path vendor/bundle
         bundle install --jobs 4 --retry 3
+      if: steps.ruby_cache.outputs.cache-hit != 'true'
 
     # Gradle Cache https://github.com/actions/cache/blob/main/examples.md#java---gradle
     - uses: actions/cache@master
