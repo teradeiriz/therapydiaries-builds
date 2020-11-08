@@ -10,9 +10,23 @@ jobs:
   deploy-android-to-play-store:
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        node-version: [12.x]
+    env:
+      SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+      USER_NAME: ${{ secrets.GITLAB_USER_NAME }}
+      USER_EMAIL: ${{ secrets.GITLAB_USER_EMAIL }}
+      SSH_KNOWN_HOST: ${{ secrets.SSH_KNOWN_HOST }}
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      CURRENT_BRANCH: ${{ github.event.client_payload.branch }}
+      GIT_LAB_COMMIT_SHA: ${{ github.event.client_payload.commit_sha }}
+      GIT_LAB_PIPELINE_ID: ${{ github.event.client_payload.pipeline_id }}
+      REPO_URL: ${{ secrets.REPO_URL }}
+      ENCRYPT_PASSWORD: ${{ secrets.ENCRYPT_PASSWORD }}
+      DATABASE_DEFAULT_ENCRYPTION_KEY: ${{ secrets.DATABASE_DEFAULT_ENCRYPTION_KEY }}
+      OAUTH_CLIENT_ID_ANDROID: ${{ secrets.OAUTH_CLIENT_ID_ANDROID }}
+      APP_METRICA_API_KEY: ${{ secrets.APP_METRICA_API_KEY }}
+      BUMP_TYPE: ${{ github.event.client_payload.bump_type }}
+      GIT_LAB_ACCESS_TOKEN: ${{ secrets.GIT_LAB_ACCESS_TOKEN }}
+      OAUTH_CLIENT_ID_IOS: ${{ secrets.OAUTH_CLIENT_ID_IOS_STAGING }}
 
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
@@ -22,22 +36,6 @@ jobs:
     # OAUTH_CLIENT_ID_IOS is needed for checks in frontend part of the code
     - name: Set environment variables that would be available between all jobs
       run: |
-        echo "::set-env name=SSH_AUTH_SOCK::/tmp/ssh_agent.sock"
-        echo "::set-env name=USER_NAME::${{ secrets.GITLAB_USER_NAME }}"
-        echo "::set-env name=USER_EMAIL::${{ secrets.GITLAB_USER_EMAIL }}"
-        echo "::set-env name=SSH_KNOWN_HOST::${{ secrets.SSH_KNOWN_HOST }}"
-        echo "::set-env name=SSH_PRIVATE_KEY::${{ secrets.SSH_PRIVATE_KEY }}"
-        echo "::set-env name=CURRENT_BRANCH::${{ github.event.client_payload.branch }}"
-        echo "::set-env name=GIT_LAB_COMMIT_SHA::${{ github.event.client_payload.commit_sha }}"
-        echo "::set-env name=GIT_LAB_PIPELINE_ID::${{ github.event.client_payload.pipeline_id }}"
-        echo "::set-env name=REPO_URL::${{ secrets.REPO_URL }}"
-        echo "::set-env name=ENCRYPT_PASSWORD::${{ secrets.ENCRYPT_PASSWORD }}"
-        echo "::set-env name=DATABASE_DEFAULT_ENCRYPTION_KEY::${{ secrets.DATABASE_DEFAULT_ENCRYPTION_KEY }}"
-        echo "::set-env name=OAUTH_CLIENT_ID_ANDROID::${{ secrets.OAUTH_CLIENT_ID_ANDROID }}"
-        echo "::set-env name=APP_METRICA_API_KEY::${{ secrets.APP_METRICA_API_KEY }}"
-        echo "::set-env name=BUMP_TYPE::${{ github.event.client_payload.bump_type }}"
-        echo "::set-env name=GIT_LAB_ACCESS_TOKEN::${{ secrets.GIT_LAB_ACCESS_TOKEN }}"
-        echo "::set-env name=OAUTH_CLIENT_ID_IOS::${{ secrets.OAUTH_CLIENT_ID_IOS_STAGING }}"
 
     - name: Check all required variables
       run: sh ./scripts/common-check.sh && sh ./scripts/android-prod-check.sh
@@ -70,21 +68,18 @@ jobs:
       run: ./infrastructure/gitlab/status.sh "state=running&description=$GITHUB_RUN_ID"
 
 
-    - name: Install Node.js ${{ matrix.node-version }}
+    - name: Install Node.js 12.x
       uses: actions/setup-node@v1
       with:
-        node-version: ${{ matrix.node-version }}
+        node-version: 12.x
+
     - uses: actions/setup-ruby@v1
       with:
         ruby-version: '2.x'
 
-    - name: Install Fastlane
-      run: bundle install
+    - run: bundle install
 
-    - name: Install packages
-      run: |
-        yarn --version
-        yarn install --frozen-lockfile
+    - run: yarn install --frozen-lockfile
 
     - name: Decrypt keystore and Google Credentials
       run: |
