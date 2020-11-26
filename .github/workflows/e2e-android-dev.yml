@@ -1,0 +1,91 @@
+name: E2E Tests Android
+
+on:
+  repository_dispatch:
+    types: ["e2e-debug-apk"]
+
+jobs:
+  distribute-ipa:
+    #    emulator: ERROR: x86_64 emulation currently requires hardware acceleration!
+    #    CPU acceleration status: KVM requires a CPU that supports vmx or svm
+    runs-on: macos-latest
+    env:
+      SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+      USER_NAME: ${{ secrets.GITLAB_USER_NAME }}
+      USER_EMAIL: ${{ secrets.GITLAB_USER_EMAIL }}
+      SSH_KNOWN_HOST: ${{ secrets.SSH_KNOWN_HOST }}
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      CURRENT_BRANCH: ${{ github.event.client_payload.branch }}
+      GIT_LAB_COMMIT_SHA: ${{ github.event.client_payload.commit_sha }}
+      GIT_LAB_PIPELINE_ID: ${{ github.event.client_payload.pipeline_id }}
+      REPO_URL: ${{ secrets.REPO_URL }}
+      DATABASE_DEFAULT_ENCRYPTION_KEY: ${{ secrets.DATABASE_DEFAULT_ENCRYPTION_KEY }}
+      OAUTH_CLIENT_ID_ANDROID: ${{ secrets.OAUTH_CLIENT_ID_ANDROID }}
+      APP_METRICA_API_KEY: ${{ secrets.APP_METRICA_API_KEY_STAGING }}
+      FIREBASEAPPDISTRO_APP: ${{ secrets.FIREBASE_APP_ID_IOS }}
+      FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+      FASTLANE_USER: ${{ secrets.FASTLANE_USER }}
+      FASTLANE_PASSWORD: ${{ secrets.FASTLANE_PASSWORD }}
+      FASTLANE_SESSION: ${{ secrets.FASTLANE_SESSION }}
+      MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+      GIT_LAB_ACCESS_TOKEN: ${{ secrets.GIT_LAB_ACCESS_TOKEN }}
+      СUSTOM_BUILD_NUMBER: ${{ github.run_number }}
+      OAUTH_CLIENT_ID_IOS: ${{ secrets.OAUTH_CLIENT_ID_IOS_STAGING }}
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      - name: Check all required variables
+        run: sh ./scripts/common-check.sh && sh ./scripts/ios-dev-check.sh
+
+      - name: Configure git users
+        run: |
+          git config --global user.name "$USER_NAME"
+          git config --global user.email "$USER_EMAIL"
+
+      - name: Setup SSH keys and known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan $SSH_KNOWN_HOST >> ~/.ssh/known_hosts
+          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
+          ssh-add ~/.ssh/id_rsa
+
+      - name: Get repository
+        run: |
+          rm -rf ./.git ./.github ./.gitignore ./*
+          ls -la ./
+          git clone "$REPO_URL" --branch="$CURRENT_BRANCH" --single --depth=1 ./
+          git log -1
+
+      - uses: actions/cache@master
+        id: yarn_cache
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+
+      - run: yarn install --frozen-lockfile
+        if: steps.yarn_cache.outputs.cache-hit != 'true'
+
+      - name: Create Android emulator
+        run: ./e2e/scripts/create-android-emulator.sh
+
+      - name: Build debug apk
+        run: |
+          yarn i18n-manifest
+          yarn e2e:android:debug:build
+
+      - name: Run tests
+        run: |
+          yarn start &
+          yarn e2e:android:debug:test
+
+      - name: Start SSH session
+        if: ${{ failure() }}
+        uses: luchihoratiu/debug-via-ssh@main
+        with:
+          NGROK_AUTH_TOKEN: 3CSPFHfF1F7Eb9j533Fwj_sFofSHZGcQKAwHwV4AZx
+          SSH_PASS: ${{ secrets.DEBUG_SSH_PASS }}
