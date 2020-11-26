@@ -1,0 +1,93 @@
+name: E2E Tests Android
+
+# Controls when the action will run. Triggers the workflow on push or pull request
+# events but only for the master branch
+on:
+  repository_dispatch:
+    types: ["e2e-debug-apk"]
+
+jobs:
+  distribute-apk:
+    runs-on: ubuntu-latest
+    env:
+      SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+      CURRENT_BRANCH: ${{ github.event.client_payload.branch }}
+      GIT_LAB_COMMIT_SHA: ${{ github.event.client_payload.commit_sha }}
+      GIT_LAB_PIPELINE_ID: ${{ github.event.client_payload.pipeline_id }}
+      USER_NAME: ${{ secrets.GITLAB_USER_NAME }}
+      USER_EMAIL: ${{ secrets.GITLAB_USER_EMAIL }}
+      SSH_KNOWN_HOST: ${{ secrets.SSH_KNOWN_HOST }}
+      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+      REPO_URL: ${{ secrets.REPO_URL }}
+      ENCRYPT_PASSWORD: ${{ secrets.ENCRYPT_PASSWORD }}
+      DATABASE_DEFAULT_ENCRYPTION_KEY: ${{ secrets.DATABASE_DEFAULT_ENCRYPTION_KEY }}
+      OAUTH_CLIENT_ID_ANDROID: ${{ secrets.OAUTH_CLIENT_ID_ANDROID_STAGING }}
+      APP_METRICA_API_KEY: ${{ secrets.APP_METRICA_API_KEY_STAGING }}
+      FIREBASEAPPDISTRO_APP: ${{ secrets.FIREBASE_APP_ID_ANDROID }}
+      FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+      GIT_LAB_ACCESS_TOKEN: ${{ secrets.GIT_LAB_ACCESS_TOKEN }}
+      OAUTH_CLIENT_ID_IOS: ${{ secrets.OAUTH_CLIENT_ID_IOS_STAGING }}
+
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      - name: Check all required variables
+        run: sh ./scripts/common-check.sh && sh ./scripts/android-dev-check.sh
+
+      - name: Fix error 'ENOSPC - System limit for number of file watchers reached'
+        run: echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
+
+      - name: Configure git users
+        run: |
+          git config --global user.name "$USER_NAME"
+          git config --global user.email "$USER_EMAIL"
+
+      - name: Setup SSH keys and known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan $SSH_KNOWN_HOST >> ~/.ssh/known_hosts
+          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
+          ssh-add ~/.ssh/id_rsa
+
+      - name: Get repository
+        run: |
+          rm -rf ./.git ./.github ./.gitignore ./*
+          ls -la ./
+          git clone "$REPO_URL" --branch="$CURRENT_BRANCH" --single --depth=1 ./
+          git log -1
+
+      - name: Notify gitlab
+        run: ./infrastructure/gitlab/status.sh "state=running&description=$GITHUB_RUN_ID"
+
+      - name: Decrypt keystore and Google Credentials
+        run: |
+          gpg --quiet --batch --yes --decrypt --passphrase="$ENCRYPT_PASSWORD" \
+          --output ./android/keystores/release.keystore ./android/keystores/release.keystore.gpg
+          gpg --quiet --batch --yes --decrypt --passphrase="$ENCRYPT_PASSWORD" \
+          --output ./android/keystores/google-private-key.json ./android/keystores/google-private-key.json.gpg
+
+
+      - uses: actions/cache@master
+        id: yarn_cache
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+
+      - run: yarn install --frozen-lockfile
+        if: steps.yarn_cache.outputs.cache-hit != 'true'
+
+      - name: Create Android emulator
+        run: ./infrastructure/e2e/create-android-emulator.sh
+
+      - name: Build debug apk
+        run: |
+          yarn i18n-manifest
+          yarn e2e:android:debug:build
+
+      - name: Run tests
+        run: |
+          yarn start &
+          yarn e2e:android:debug:test
