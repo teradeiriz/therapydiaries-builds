@@ -105,7 +105,9 @@ jobs:
         key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
 
     - name: Install gem dependencies
-      if: steps.ruby_cache.outputs.cache-hit != 'true'
+      # tmp fix: force to create cache of Ruby gems
+      # Bundler::GemNotFound: Could not find unf_ext-0.0.7.7 in any of the sources
+      # if: steps.ruby_cache.outputs.cache-hit != 'true'
       run: |
         bundle config path vendor/bundle
         bundle install --jobs 4 --retry 3
@@ -118,9 +120,7 @@ jobs:
         key: ${{ runner.os }}-pods-derived-data-${{ hashFiles('**/Podfile.lock') }}
 
     - name: Run fastlane line "fastlane ios distribute" with PROD ENV variables
-      run: |
-        yarn i18n-manifest
-        bundle exec fastlane ios distribute
+      run: bundle exec fastlane ios distribute
 
     - name: The job has cancelled
       if: ${{ cancelled() }}

@@ -5,9 +5,10 @@ on:
     types: ["e2e-debug-apk"]
 
 jobs:
-  distribute-ipa:
+  e2e-debug-apk:
     #    emulator: ERROR: x86_64 emulation currently requires hardware acceleration!
     #    CPU acceleration status: KVM requires a CPU that supports vmx or svm
+    #    It mean that we can't use `linux-latest`
     runs-on: macos-latest
     env:
       SSH_AUTH_SOCK: /tmp/ssh_agent.sock
@@ -73,19 +74,5 @@ jobs:
       - name: Create Android emulator
         run: ./e2e/scripts/create-android-emulator.sh
 
-      - name: Build debug apk
-        run: |
-          yarn i18n-manifest
-          yarn e2e:android:debug:build
-
-      - name: Run tests
-        run: |
-          yarn start &
-          yarn e2e:android:debug:test
-
-      - name: Start SSH session
-        if: ${{ failure() }}
-        uses: luchihoratiu/debug-via-ssh@main
-        with:
-          NGROK_AUTH_TOKEN: 3CSPFHfF1F7Eb9j533Fwj_sFofSHZGcQKAwHwV4AZx
-          SSH_PASS: ${{ secrets.DEBUG_SSH_PASS }}
+      - name: Build and run E2E tests
+        run: yarn e2e:android:debug:test

@@ -110,9 +110,7 @@ jobs:
         bundle install --jobs 4 --retry 3
 
     - name: Run fastlane line "fastlane ios distribute" with PROD ENV variables
-      run: |
-        yarn i18n-manifest
-        bundle exec fastlane ios distribute
+      run: bundle exec fastlane ios distribute
 
     - name: The job has cancelled
       if: ${{ cancelled() }}
