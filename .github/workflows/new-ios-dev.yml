@@ -118,9 +118,7 @@ jobs:
         key: ${{ runner.os }}-pods-derived-data-${{ hashFiles('**/Podfile.lock') }}
 
     - name: Run fastlane line "fastlane ios distribute" with PROD ENV variables
-      run: |
-        yarn i18n-manifest
-        bundle exec fastlane ios distribute
+      run: bundle exec fastlane ios distribute
 
     - name: The job has cancelled
       if: ${{ cancelled() }}

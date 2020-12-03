@@ -110,9 +110,7 @@ jobs:
             ${{ runner.os }}-gradle-
 
       - name: Run fastlane line "fastlane android distribute" with PROD ENV variables
-        run: |
-          yarn i18n-manifest
-          bundle exec fastlane android distribute
+        run: bundle exec fastlane android distribute
 
       - name: The job has cancelled
         if: ${{ cancelled() }}
