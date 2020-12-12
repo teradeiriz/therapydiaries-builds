@@ -42,8 +42,10 @@ jobs:
 
     - name: Switch to Java 8 (hack for uploading build to Test Flight)
       run: |
-        cd /Library/Java/JavaVirtualMachines
-        rm -rf openjdk-11.0.1.jdk
+          java --version
+          cd /Library/Java/JavaVirtualMachines
+          rm -rf openjdk-11.0.1.jdk
+          java --version
 
     - name: Configure git users
       run: |
