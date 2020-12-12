@@ -40,6 +40,11 @@ jobs:
     - name: Check all required variables
       run: sh ./scripts/common-check.sh && sh ./scripts/ios-prod-check.sh
 
+    - name: Switch to Java 8 (hack for uploading build to Test Flight)
+      run: |
+        cd /Library/Java/JavaVirtualMachines
+        rm -rf openjdk-11.0.1.jdk
+
     - name: Configure git users
       run: |
           git config --global user.name "$USER_NAME"
