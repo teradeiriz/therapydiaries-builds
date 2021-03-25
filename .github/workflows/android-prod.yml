@@ -27,6 +27,7 @@ jobs:
       BUMP_TYPE: ${{ github.event.client_payload.bump_type }}
       GIT_LAB_ACCESS_TOKEN: ${{ secrets.GIT_LAB_ACCESS_TOKEN }}
       OAUTH_CLIENT_ID_IOS: ${{ secrets.OAUTH_CLIENT_ID_IOS_STAGING }}
+      AMPLITUDE_API_KEY: ${{ secrets.AMPLITUDE_API_KEY }}
 
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it

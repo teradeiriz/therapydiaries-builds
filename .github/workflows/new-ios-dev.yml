@@ -33,6 +33,7 @@ jobs:
       СUSTOM_BUILD_NUMBER: ${{ github.run_number }}
       OAUTH_CLIENT_ID_IOS: ${{ secrets.OAUTH_CLIENT_ID_IOS_STAGING }}
       ACTIONS_STEP_DEBUG: true
+      AMPLITUDE_API_KEY: ${{ secrets.AMPLITUDE_API_KEY_STAGING }}
 
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it

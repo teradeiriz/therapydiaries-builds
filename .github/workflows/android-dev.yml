@@ -27,6 +27,7 @@ jobs:
       FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
       GIT_LAB_ACCESS_TOKEN: ${{ secrets.GIT_LAB_ACCESS_TOKEN }}
       OAUTH_CLIENT_ID_IOS: ${{ secrets.OAUTH_CLIENT_ID_IOS_STAGING }}
+      AMPLITUDE_API_KEY: ${{ secrets.AMPLITUDE_API_KEY_STAGING }}
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
