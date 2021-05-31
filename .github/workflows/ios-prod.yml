@@ -33,6 +33,7 @@ jobs:
       GIT_LAB_ACCESS_TOKEN: ${{ secrets.GIT_LAB_ACCESS_TOKEN }}
       OAUTH_CLIENT_ID_IOS: ${{ secrets.OAUTH_CLIENT_ID_IOS }}
       AMPLITUDE_API_KEY: ${{ secrets.AMPLITUDE_API_KEY }}
+      APPSFLYER_API_KEY: ${{ secrets.APPSFLYER_API_KEY }}
 
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
