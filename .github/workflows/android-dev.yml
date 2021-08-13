@@ -10,6 +10,9 @@ jobs:
   distribute-apk:
     runs-on: ubuntu-latest
     env:
+      SENTRY_PROPERTIES: ./sentry.properties
+      SENTRY_DIST: 0
+      SENTRY_RELEASE: alpha
       SSH_AUTH_SOCK: /tmp/ssh_agent.sock
       CURRENT_BRANCH: ${{ github.event.client_payload.branch }}
       GIT_LAB_COMMIT_SHA: ${{ github.event.client_payload.commit_sha }}
