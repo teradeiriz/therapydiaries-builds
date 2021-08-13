@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     env:
+      SENTRY_PROPERTIES: ./sentry.properties
       SSH_AUTH_SOCK: /tmp/ssh_agent.sock
       USER_NAME: ${{ secrets.GITLAB_USER_NAME }}
       USER_EMAIL: ${{ secrets.GITLAB_USER_EMAIL }}
