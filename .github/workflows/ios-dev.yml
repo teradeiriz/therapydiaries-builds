@@ -10,7 +10,7 @@ jobs:
   distribute-ipa:
     runs-on: macos-latest
     env:
-      SENTRY_PROPERTIES: ./sentry.properties
+      SENTRY_PROPERTIES: ./ios/sentry.properties
       SENTRY_DIST: 0
       SENTRY_RELEASE: alpha
       SSH_AUTH_SOCK: /tmp/ssh_agent.sock
