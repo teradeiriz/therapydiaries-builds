@@ -37,6 +37,7 @@ jobs:
       OAUTH_CLIENT_ID_IOS: ${{ secrets.OAUTH_CLIENT_ID_IOS_STAGING }}
       ACTIONS_STEP_DEBUG: true
       AMPLITUDE_API_KEY: ${{ secrets.AMPLITUDE_API_KEY_STAGING }}
+      REVENUECAT_API_KEY: ${{ secrets.REVENUECAT_API_KEY }}
 
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
