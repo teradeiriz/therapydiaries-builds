@@ -8,7 +8,7 @@ on:
 
 jobs:
   distribute-ipa:
-    runs-on: macos-latest
+    runs-on: macos-11
     env:
       SENTRY_PROPERTIES: ./ios/sentry.properties
       SENTRY_DIST: 0

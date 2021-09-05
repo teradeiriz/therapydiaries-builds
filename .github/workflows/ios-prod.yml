@@ -8,7 +8,7 @@ on:
 
 jobs:
   deploy-ios-to-test-flight:
-    runs-on: macos-latest
+    runs-on: macos-11
 
     env:
       SENTRY_PROPERTIES: ./ios/sentry.properties
