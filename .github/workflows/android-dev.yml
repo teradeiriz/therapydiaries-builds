@@ -105,14 +105,14 @@ jobs:
         if: steps.ruby_cache.outputs.cache-hit != 'true'
 
       # Gradle Cache https://github.com/actions/cache/blob/main/examples.md#java---gradle
-      - uses: actions/cache@master
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+#       - uses: actions/cache@master
+#         with:
+#           path: |
+#             ~/.gradle/caches
+#             ~/.gradle/wrapper
+#           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
+#           restore-keys: |
+#             ${{ runner.os }}-gradle-
 
       - name: Run fastlane line "fastlane android distribute" with PROD ENV variables
         run: bundle exec fastlane android distribute
