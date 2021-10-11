@@ -75,6 +75,11 @@ jobs:
     - name: Notify gitlab
       run: ./infrastructure/gitlab/status.sh "state=running&description=$GITHUB_RUN_ID"
 
+    # Get cocoapods version based on Podfile.lock
+    - name: setup-cocoapods
+      uses: maxim-lobanov/setup-cocoapods@v1
+      with:
+        podfile-path: ./ios/Podfile.lock
 
     - name: Install Node.js 12.x
       uses: actions/setup-node@v1
