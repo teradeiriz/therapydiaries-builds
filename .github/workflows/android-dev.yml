@@ -118,8 +118,12 @@ jobs:
       - name: Specify cmake version
         run: echo "cmake.dir=/usr/local/lib/android/sdk/cmake/3.10.2.4988404" >> android/local.properties
 
+      - run: find -type f -name "*index.android.bundle*"
+
       - name: Run fastlane line "fastlane android distribute" with PROD ENV variables
         run: bundle exec fastlane android distribute
+
+      - run: find -type f -name "*index.android.bundle*"
 
       - name: The job has cancelled
         if: ${{ cancelled() }}
