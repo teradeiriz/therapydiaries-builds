@@ -37,6 +37,8 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
 
+      - run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "ndk;21.1.6352462" --channel=0
+
       - name: Check all required variables
         run: sh ./scripts/common-check.sh && sh ./scripts/android-dev-check.sh
 
