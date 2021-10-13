@@ -37,6 +37,13 @@ jobs:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
 
+    # Fix MMKV build
+    - run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "ndk;21.1.6352462" --channel=0
+    - run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --uninstall "ndk;21.4.7075529"
+    - run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --uninstall "ndk;22.1.7171670"
+    - run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --uninstall "ndk;23.0.7599858"
+
+
     # https://help.github.com/en/actions/reference/workflow-commands-for-github-actions#setting-an-environment-variable
     # OAUTH_CLIENT_ID_IOS is needed for checks in frontend part of the code
     - name: Set environment variables that would be available between all jobs
