@@ -38,6 +38,9 @@ jobs:
       - uses: actions/checkout@v2
 
       - run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "ndk;21.1.6352462" --channel=0
+      - run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --uninstall "ndk;21.4.7075529"
+      - run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --uninstall "ndk;22.1.7171670"
+      - run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --uninstall "ndk;23.0.7599858"
 
       - name: Check all required variables
         run: sh ./scripts/common-check.sh && sh ./scripts/android-dev-check.sh
