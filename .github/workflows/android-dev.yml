@@ -39,11 +39,16 @@ jobs:
 
       - run: ls -la /usr/local/lib/android/sdk/cmake
       - run: ls -la /usr/local/lib/android/sdk/ndk
+
+      - run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --uninstall "ndk;*"
+
       - run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "ndk;21.1.6352462" --channel=0
       - run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --uninstall "ndk;21.4.7075529"
       - run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --uninstall "ndk;22.1.7171670"
       - run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --uninstall "ndk;23.0.7599858"
 
+      - run: ls -la /usr/local/lib/android/sdk/ndk
+     
       - name: Check all required variables
         run: sh ./scripts/common-check.sh && sh ./scripts/android-dev-check.sh
 
