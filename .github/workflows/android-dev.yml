@@ -106,11 +106,11 @@ jobs:
         with:
           ruby-version: "2.x"
 
-      - uses: actions/cache@master
-        id: ruby_cache
-        with:
-          path: vendor/bundle
-          key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
+#       - uses: actions/cache@master
+#         id: ruby_cache
+#         with:
+#           path: vendor/bundle
+#           key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
 
       - run: |
           bundle config path vendor/bundle
