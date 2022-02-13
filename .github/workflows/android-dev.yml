@@ -118,14 +118,14 @@ jobs:
         if: steps.ruby_cache.outputs.cache-hit != 'true'
 
       # Gradle Cache https://github.com/actions/cache/blob/main/examples.md#java---gradle
-      - uses: actions/cache@master
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+#       - uses: actions/cache@master
+#         with:
+#           path: |
+#             ~/.gradle/caches
+#             ~/.gradle/wrapper
+#           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
+#           restore-keys: |
+#             ${{ runner.os }}-gradle-
 
       # To fix mmkv module build error: "CMake 3.9.0 or higher is required.  You are running version 3.6.0-rc2"
       - name: Specify cmake version
