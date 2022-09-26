@@ -8,7 +8,7 @@ on:
 
 jobs:
   distribute-ipa:
-    runs-on: macos-12
+    runs-on: macos-12 # xcode 14
     env:
       SENTRY_PROPERTIES: ./ios/sentry.properties
       SENTRY_DIST: 0
@@ -42,8 +42,6 @@ jobs:
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v2
-    # 26 Sep xCode 14 will be default for "runs-on: macos-12"
-    - run: sudo xcode-select -s /Applications/Xcode_14.0.1.app
 
     - name: Check all required variables
       run: sh ./scripts/common-check.sh && sh ./scripts/ios-dev-check.sh
