@@ -41,7 +41,7 @@ jobs:
       # Fix "Installed Build Tools revision 31.0.0 is corrupted. Remove and install again using the SDK Manager."
       # See: https://stackoverflow.com/questions/68387270/android-studio-error-installed-build-tools-revision-31-0-0-is-corrupted
       - run: cd /usr/local/lib/android/sdk/build-tools/31.0.0 && mv d8 dx  && cd lib && mv d8.jar dx.jar
-      - run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "ndk;21.1.6352462" --channel=0
+#       - run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "ndk;21.1.6352462" --channel=0
       
 #       # Fix mmkv module build (need to be instaled only one ndk version)
 #       # Error: "No toolchains found in the NDK toolchains folder for ABI with prefix: arm-linux-androideabi"
