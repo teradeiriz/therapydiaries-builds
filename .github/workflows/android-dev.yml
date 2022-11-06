@@ -96,7 +96,9 @@ jobs:
         id: yarn_cache
         with:
           path: node_modules
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          key: ${{ runner.os }}-yarn-v1-android-${{ hashFiles('**/yarn.lock') }}
+
+      - run: npx envinfo
 
       - run: yarn install --frozen-lockfile
         if: steps.yarn_cache.outputs.cache-hit != 'true'
@@ -128,8 +130,8 @@ jobs:
 #             ${{ runner.os }}-gradle-
 
       # To fix mmkv module build error: "CMake 3.9.0 or higher is required.  You are running version 3.6.0-rc2"
-      - name: Specify cmake version
-        run: echo "cmake.dir=/usr/local/lib/android/sdk/cmake/3.10.2.4988404" >> android/local.properties
+#       - name: Specify cmake version
+#         run: echo "cmake.dir=/usr/local/lib/android/sdk/cmake/3.10.2.4988404" >> android/local.properties
 
       - name: Run fastlane line "fastlane android distribute" with PROD ENV variables
         run: bundle exec fastlane android distribute
