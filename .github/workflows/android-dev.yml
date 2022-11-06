@@ -10,6 +10,7 @@ jobs:
   distribute-apk:
     runs-on: ubuntu-20.04
     env:
+      SENTRY_LOG_LEVEL: debug
       SENTRY_PROPERTIES: ./android/sentry.properties
       SENTRY_DIST: 0
       SENTRY_RELEASE: alpha
