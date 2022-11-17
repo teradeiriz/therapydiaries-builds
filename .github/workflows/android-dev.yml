@@ -140,14 +140,14 @@ jobs:
 
       - name: The job has cancelled
         if: ${{ cancelled() }}
-        run: |
-          ./infrastructure/gitlab/status.sh "state=canceled"
-          ls -la android/app/build/intermediates/sourcemaps/react/staging/
-          ls -la android/app/build/generated/sourcemaps/react/staging/
+        run: ./infrastructure/gitlab/status.sh "state=canceled"
 
       - name: The job has failed
         if: ${{ failure() }}
-        run: ./infrastructure/gitlab/status.sh "state=failed"
+        run: |
+          ./infrastructure/gitlab/status.sh "state=failed"
+          ls -la android/app/build/intermediates/sourcemaps/react/staging/
+          ls -la android/app/build/generated/sourcemaps/react/staging/
 
       - name: The job has success
         run: ./infrastructure/gitlab/status.sh "state=success"
