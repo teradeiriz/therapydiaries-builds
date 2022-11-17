@@ -140,7 +140,10 @@ jobs:
 
       - name: The job has cancelled
         if: ${{ cancelled() }}
-        run: ./infrastructure/gitlab/status.sh "state=canceled"
+        run: |
+          ./infrastructure/gitlab/status.sh "state=canceled"
+          ls -la android/app/build/intermediates/sourcemaps/react/staging/
+          ls -la android/app/build/generated/sourcemaps/react/staging/
 
       - name: The job has failed
         if: ${{ failure() }}
