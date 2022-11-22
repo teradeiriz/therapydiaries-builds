@@ -43,14 +43,6 @@ jobs:
       # Fix "Installed Build Tools revision 31.0.0 is corrupted. Remove and install again using the SDK Manager."
       # See: https://stackoverflow.com/questions/68387270/android-studio-error-installed-build-tools-revision-31-0-0-is-corrupted
       - run: cd /usr/local/lib/android/sdk/build-tools/31.0.0 && mv d8 dx  && cd lib && mv d8.jar dx.jar
-#       - run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "ndk;21.1.6352462" --channel=0
-      
-#       # Fix mmkv module build (need to be instaled only one ndk version)
-#       # Error: "No toolchains found in the NDK toolchains folder for ABI with prefix: arm-linux-androideabi"
-#       - run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --uninstall "ndk;21.4.7075529"
-#       - run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --uninstall "ndk;22.1.7171670"
-#       - run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --uninstall "ndk;23.1.7779620"
-#       - run: ls -la /usr/local/lib/android/sdk/ndk
 
       - name: Check all required variables
         run: sh ./scripts/common-check.sh && sh ./scripts/android-dev-check.sh
@@ -111,12 +103,6 @@ jobs:
           ruby-version: "2.7.6"
           bundler-cache: true
 
-#       - uses: actions/cache@v3
-#         id: ruby_cache
-#         with:
-#           path: vendor/bundle
-#           key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
-
       - run: |
           bundle config path vendor/bundle
           bundle install --jobs 4 --retry 3
@@ -132,9 +118,6 @@ jobs:
 #           restore-keys: |
 #             ${{ runner.os }}-gradle-
 
-      # To fix mmkv module build error: "CMake 3.9.0 or higher is required.  You are running version 3.6.0-rc2"
-#       - name: Specify cmake version
-#         run: echo "cmake.dir=/usr/local/lib/android/sdk/cmake/3.10.2.4988404" >> android/local.properties
 
       - name: Run fastlane line "fastlane android distribute" with PROD ENV variables
         run: bundle exec fastlane android distribute
