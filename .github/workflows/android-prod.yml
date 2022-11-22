@@ -34,88 +34,70 @@ jobs:
       REVENUECAT_API_KEY: ${{ secrets.REVENUECAT_API_KEY }}
 
     steps:
-    # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-    - uses: actions/checkout@v2
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
 
-    # Fix "Installed Build Tools revision 31.0.0 is corrupted. Remove and install again using the SDK Manager."
-    # See: https://stackoverflow.com/questions/68387270/android-studio-error-installed-build-tools-revision-31-0-0-is-corrupted
-    - run: cd /usr/local/lib/android/sdk/build-tools/31.0.0 && mv d8 dx  && cd lib && mv d8.jar dx.jar
+      # Fix "Installed Build Tools revision 31.0.0 is corrupted. Remove and install again using the SDK Manager."
+      # See: https://stackoverflow.com/questions/68387270/android-studio-error-installed-build-tools-revision-31-0-0-is-corrupted
+      - run: cd /usr/local/lib/android/sdk/build-tools/31.0.0 && mv d8 dx  && cd lib && mv d8.jar dx.jar
 
-    - run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --install "ndk;21.1.6352462" --channel=0
+      - name: Check all required variables
+        run: sh ./scripts/common-check.sh && sh ./scripts/android-prod-check.sh
 
-    # Fix mmkv module build (need to be instaled only one ndk version)
-    # Error: "No toolchains found in the NDK toolchains folder for ABI with prefix: arm-linux-androideabi"
-    - run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --uninstall "ndk;21.4.7075529"
-    - run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --uninstall "ndk;22.1.7171670"
-    - run: $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --uninstall "ndk;23.1.7779620"
-    - run: ls -la /usr/local/lib/android/sdk/ndk
+      - name: Fix error 'ENOSPC - System limit for number of file watchers reached'
+        run: echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
 
-    # https://help.github.com/en/actions/reference/workflow-commands-for-github-actions#setting-an-environment-variable
-    # OAUTH_CLIENT_ID_IOS is needed for checks in frontend part of the code
-    - name: Set environment variables that would be available between all jobs
-      run: |
+      - name: Configure git users
+        run: |
+            git config --global user.name "$USER_NAME"
+            git config --global user.email "$USER_EMAIL"
 
-    - name: Check all required variables
-      run: sh ./scripts/common-check.sh && sh ./scripts/android-prod-check.sh
+      - name: Setup SSH keys and known_hosts
+        run: |
+            mkdir -p ~/.ssh
+            echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+            chmod 600 ~/.ssh/id_rsa
+            ssh-keyscan $SSH_KNOWN_HOST >> ~/.ssh/known_hosts
+            ssh-agent -a $SSH_AUTH_SOCK > /dev/null
+            ssh-add ~/.ssh/id_rsa
 
-    - name: Fix error 'ENOSPC - System limit for number of file watchers reached'
-      run: echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
+      - name: Get repository
+        run: |
+          rm -rf ./.git ./.github ./.gitignore ./*
+          ls -la ./
+          git clone "$REPO_URL" --branch="$CURRENT_BRANCH" --single ./
+          git log -1
 
-    - name: Configure git users
-      run: |
-          git config --global user.name "$USER_NAME"
-          git config --global user.email "$USER_EMAIL"
+      - name: Notify gitlab
+        run: ./infrastructure/gitlab/status.sh "state=running&description=$GITHUB_RUN_ID"
 
-    - name: Setup SSH keys and known_hosts
-      run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan $SSH_KNOWN_HOST >> ~/.ssh/known_hosts
-          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
-          ssh-add ~/.ssh/id_rsa
+      - name: Install Ruby 2.x
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "2.7.6"
+          bundler-cache: true
 
-    - name: Get repository
-      run: |
-        rm -rf ./.git ./.github ./.gitignore ./*
-        ls -la ./
-        git clone "$REPO_URL" --branch="$CURRENT_BRANCH" --single ./
-        git log -1
+      - run: bundle install
 
-    - name: Notify gitlab
-      run: ./infrastructure/gitlab/status.sh "state=running&description=$GITHUB_RUN_ID"
+      - run: yarn install --frozen-lockfile
 
+      - name: Decrypt keystore and Google Credentials
+        run: |
+          gpg --quiet --batch --yes --decrypt --passphrase="$ENCRYPT_PASSWORD" \
+          --output ./android/keystores/release.keystore ./android/keystores/release.keystore.gpg
+          gpg --quiet --batch --yes --decrypt --passphrase="$ENCRYPT_PASSWORD" \
+          --output ./android/keystores/google-private-key.json ./android/keystores/google-private-key.json.gpg
 
-    - name: Install Node.js 12.x
-      uses: actions/setup-node@v1
-      with:
-        node-version: 12.x
+      - name: Run fastlane line "fastlane android deploy" with PROD ENV variables
+        run: bundle exec fastlane android deploy
 
-    - uses: actions/setup-ruby@v1
-      with:
-        ruby-version: '2.x'
+      - name: The job has cancelled
+        if: ${{ cancelled() }}
+        run: ./infrastructure/gitlab/status.sh "state=canceled"
 
-    - run: bundle install
+      - name: The job has failed
+        if: ${{ failure() }}
+        run: ./infrastructure/gitlab/status.sh "state=failed"
 
-    - run: yarn install --frozen-lockfile
-
-    - name: Decrypt keystore and Google Credentials
-      run: |
-        gpg --quiet --batch --yes --decrypt --passphrase="$ENCRYPT_PASSWORD" \
-        --output ./android/keystores/release.keystore ./android/keystores/release.keystore.gpg
-        gpg --quiet --batch --yes --decrypt --passphrase="$ENCRYPT_PASSWORD" \
-        --output ./android/keystores/google-private-key.json ./android/keystores/google-private-key.json.gpg
-
-    - name: Run fastlane line "fastlane android deploy" with PROD ENV variables
-      run: bundle exec fastlane android deploy
-
-    - name: The job has cancelled
-      if: ${{ cancelled() }}
-      run: ./infrastructure/gitlab/status.sh "state=canceled"
-
-    - name: The job has failed
-      if: ${{ failure() }}
-      run: ./infrastructure/gitlab/status.sh "state=failed"
-
-    - name: The job has success
-      run: ./infrastructure/gitlab/status.sh "state=success"
+      - name: The job has success
+        run: ./infrastructure/gitlab/status.sh "state=success"
