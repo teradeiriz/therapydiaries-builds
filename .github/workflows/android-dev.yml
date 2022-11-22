@@ -37,7 +37,7 @@ jobs:
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
 
 
       # Fix "Installed Build Tools revision 31.0.0 is corrupted. Remove and install again using the SDK Manager."
@@ -106,9 +106,10 @@ jobs:
         if: steps.yarn_cache.outputs.cache-hit != 'true'
 
       - name: Install Ruby 2.x
-        uses: actions/setup-ruby@v1
+        uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "2.x"
+          ruby-version: "2.7.6"
+          bundler-cache: true
 
 #       - uses: actions/cache@master
 #         id: ruby_cache
