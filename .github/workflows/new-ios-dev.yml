@@ -41,7 +41,7 @@ jobs:
 
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
 
     - name: Check all required variables
       run: sh ./scripts/common-check.sh && sh ./scripts/ios-dev-check.sh
@@ -70,16 +70,11 @@ jobs:
     - name: Notify gitlab
       run: ./infrastructure/gitlab/status.sh "state=running&description=$GITHUB_RUN_ID"
 
-    # Get cocoapods version based on Podfile.lock
-    - name: setup-cocoapods
-      uses: maxim-lobanov/setup-cocoapods@v1
-      with:
-        podfile-path: ./ios/Podfile.lock
-
     - name: Install Ruby 2.x
-      uses: actions/setup-ruby@v1
+      uses: ruby/setup-ruby@v1
       with:
-        ruby-version: '2.x'
+        ruby-version: "2.7.6"
+        bundler-cache: true
 
     - name: Install Firebase
       run: |
@@ -87,7 +82,7 @@ jobs:
         which firebase
       shell: bash
 
-    - uses: actions/cache@master
+    - uses: actions/cache@v3
       id: yarn_cache
       with:
         path: node_modules
@@ -96,12 +91,12 @@ jobs:
     - run: yarn install --frozen-lockfile
       if: steps.yarn_cache.outputs.cache-hit != 'true'
 
-    - uses: actions/cache@master
+    - uses: actions/cache@v3
       with:
         path: ~/Library/Caches/CocoaPods
         key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
 
-    - uses: actions/cache@master
+    - uses: actions/cache@v3
       with:
         path: ~/.cocoapods
         key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
@@ -109,7 +104,7 @@ jobs:
     - run: pod install
       working-directory: ios
 
-    - uses: actions/cache@master
+    - uses: actions/cache@v3
       id: ruby_cache
       with:
         path: vendor/bundle
@@ -123,7 +118,7 @@ jobs:
         bundle config path vendor/bundle
         bundle install --jobs 4 --retry 3
 
-    - uses: actions/cache@master
+    - uses: actions/cache@v3
       env:
         ACTIONS_STEP_DEBUG: true
       with:
