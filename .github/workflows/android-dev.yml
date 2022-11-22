@@ -94,7 +94,7 @@ jobs:
           sudo curl -o "/usr/local/bin/firebase" -L --progress-bar "https://firebase.tools/bin/linux/latest"
           sudo chmod +rx "/usr/local/bin/firebase"
 
-      - uses: actions/cache@master
+      - uses: actions/cache@v3
         id: yarn_cache
         with:
           path: node_modules
@@ -111,7 +111,7 @@ jobs:
           ruby-version: "2.7.6"
           bundler-cache: true
 
-#       - uses: actions/cache@master
+#       - uses: actions/cache@v3
 #         id: ruby_cache
 #         with:
 #           path: vendor/bundle
@@ -123,7 +123,7 @@ jobs:
         if: steps.ruby_cache.outputs.cache-hit != 'true'
 
       # Gradle Cache https://github.com/actions/cache/blob/main/examples.md#java---gradle
-#       - uses: actions/cache@master
+#       - uses: actions/cache@v3
 #         with:
 #           path: |
 #             ~/.gradle/caches
