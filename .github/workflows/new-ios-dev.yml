@@ -127,6 +127,8 @@ jobs:
 
     - name: Run fastlane line "fastlane ios distribute" with PROD ENV variables
       run: bundle exec fastlane ios distribute
+      env:
+        BETA_BUILD: true
 
     - name: The job has cancelled
       if: ${{ cancelled() }}
