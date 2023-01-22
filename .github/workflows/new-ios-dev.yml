@@ -76,54 +76,45 @@ jobs:
         ruby-version: "2.7.6"
         bundler-cache: true
 
-    - name: Install Firebase
-      run: |
-        curl -sL https://firebase.tools | bash
-        which firebase
-      shell: bash
+#     - name: Install Firebase
+#       run: |
+#         curl -sL https://firebase.tools | bash
+#         which firebase
+#       shell: bash
 
-    - uses: actions/cache@v3
+    - name: Yarn cache
+      uses: actions/cache@v3
       id: yarn_cache
       with:
         path: node_modules
-        key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+        key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
+        restore-keys: ${{ runner.os }}-yarn-
 
     - name: Metro cache
       uses: actions/cache@v3
       with:
-        path: /tmp/metro-cache
-        key: ${{ runner.os }}-metro-${{ hashFiles('./yarn.lock') }}
+        path: |
+          $TMPDIR/haste-map-*
+          $TMPDIR/metro-cache
+        key: ${{ runner.os }}-metro-${{ hashFiles('yarn.lock') }}
         restore-keys: ${{ runner.os }}-metro-
 
     - run: yarn install --frozen-lockfile
       if: steps.yarn_cache.outputs.cache-hit != 'true'
 
-    - uses: actions/cache@v3
+    - name: Pods cache
+      uses: actions/cache@v3
       with:
-        path: ~/Library/Caches/CocoaPods
-        key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
-
-    - uses: actions/cache@v3
-      with:
-        path: ~/.cocoapods
-        key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
+        path: |
+          ~/.cocoapods
+          ~/Library/Caches/CocoaPods
+        key: ${{ runner.os }}-pods-${{ hashFiles('ios/Podfile.lock') }}
+        restore-keys: ${{ runner.os }}-pods-
 
     - run: pod install
       working-directory: ios
 
-    - uses: actions/cache@v3
-      id: ruby_cache
-      with:
-        path: vendor/bundle
-        key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
-
-    - name: Install gem dependencies
-      # tmp fix: force to create cache of Ruby gems
-      # Bundler::GemNotFound: Could not find unf_ext-0.0.7.7 in any of the sources
-      # if: steps.ruby_cache.outputs.cache-hit != 'true'
-      run: |
-        bundle config path vendor/bundle
-        bundle install --jobs 4 --retry 3
+    - run: bundle install --jobs 4 --retry 3
 
     - uses: actions/cache@v3
       env:
@@ -136,6 +127,9 @@ jobs:
       run: bundle exec fastlane ios distribute
       env:
         BETA_BUILD: true
+
+    - run: echo "--$TMPDIR--"
+    - run: ls -la $TMPDIR/metro-cache
 
     - name: The job has cancelled
       if: ${{ cancelled() }}
