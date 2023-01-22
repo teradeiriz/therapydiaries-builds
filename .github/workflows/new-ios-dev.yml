@@ -76,12 +76,6 @@ jobs:
         ruby-version: "2.7.6"
         bundler-cache: true
 
-#     - name: Install Firebase
-#       run: |
-#         curl -sL https://firebase.tools | bash
-#         which firebase
-#       shell: bash
-
     - name: Yarn cache
       uses: actions/cache@v3
       id: yarn_cache
@@ -116,20 +110,18 @@ jobs:
 
     - run: bundle install --jobs 4 --retry 3
 
-    - uses: actions/cache@v3
+    - name: iOS build cache
+      uses: actions/cache@v3
       env:
         ACTIONS_STEP_DEBUG: true
       with:
         path: .local_derived_data
-        key: ${{ runner.os }}-pods-derived-data-${{ hashFiles('**/Podfile.lock') }}
+        key: ${{ runner.os }}-pods-derived-data-${{ hashFiles('ios/Podfile.lock') }}
 
     - name: Run fastlane line "fastlane ios distribute" with PROD ENV variables
       run: bundle exec fastlane ios distribute
       env:
         BETA_BUILD: true
-
-    - run: echo "--$TMPDIR--"
-    - run: ls -la $TMPDIR/metro-cache
 
     - name: The job has cancelled
       if: ${{ cancelled() }}
