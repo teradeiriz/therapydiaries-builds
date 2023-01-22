@@ -88,6 +88,13 @@ jobs:
         path: node_modules
         key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
 
+    - name: Metro cache
+      uses: actions/cache@v3
+      with:
+        path: /tmp/metro-cache
+        key: ${{ runner.os }}-metro-${{ hashFiles('./yarn.lock') }}
+        restore-keys: ${{ runner.os }}-metro-
+
     - run: yarn install --frozen-lockfile
       if: steps.yarn_cache.outputs.cache-hit != 'true'
 
