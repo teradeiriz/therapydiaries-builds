@@ -39,11 +39,6 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
 
-
-      # Fix "Installed Build Tools revision 31.0.0 is corrupted. Remove and install again using the SDK Manager."
-      # See: https://stackoverflow.com/questions/68387270/android-studio-error-installed-build-tools-revision-31-0-0-is-corrupted
-      - run: cd /usr/local/lib/android/sdk/build-tools/31.0.0 && mv d8 dx  && cd lib && mv d8.jar dx.jar
-
       - name: Check all required variables
         run: sh ./scripts/common-check.sh && sh ./scripts/android-dev-check.sh
 
@@ -81,20 +76,17 @@ jobs:
           gpg --quiet --batch --yes --decrypt --passphrase="$ENCRYPT_PASSWORD" \
           --output ./android/keystores/google-private-key.json ./android/keystores/google-private-key.json.gpg
 
-      - name: Install Firebase
-        run: |
-          sudo curl -o "/usr/local/bin/firebase" -L --progress-bar "https://firebase.tools/bin/linux/latest"
-          sudo chmod +rx "/usr/local/bin/firebase"
-
-      - uses: actions/cache@v3
+      - name: Yarn cache
+        uses: actions/cache@v3
         id: yarn_cache
         with:
           path: node_modules
-          key: ${{ runner.os }}-yarn-v1-android-${{ hashFiles('**/yarn.lock') }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
+          restore-keys: ${{ runner.os }}-yarn-
 
-      - run: npx envinfo
-
-      - run: yarn install --frozen-lockfile
+      - run: |
+          yarn install --frozen-lockfile
+          npx envinfo
         if: steps.yarn_cache.outputs.cache-hit != 'true'
 
       - name: Install Ruby 2.x
@@ -103,21 +95,7 @@ jobs:
           ruby-version: "2.7.6"
           bundler-cache: true
 
-      - run: |
-          bundle config path vendor/bundle
-          bundle install --jobs 4 --retry 3
-        if: steps.ruby_cache.outputs.cache-hit != 'true'
-
-      # Gradle Cache https://github.com/actions/cache/blob/main/examples.md#java---gradle
-#       - uses: actions/cache@v3
-#         with:
-#           path: |
-#             ~/.gradle/caches
-#             ~/.gradle/wrapper
-#           key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*') }}
-#           restore-keys: |
-#             ${{ runner.os }}-gradle-
-
+      - run: bundle install --jobs 4 --retry 3
 
       - name: Run fastlane line "fastlane android distribute" with PROD ENV variables
         run: bundle exec fastlane android distribute
@@ -130,10 +108,7 @@ jobs:
 
       - name: The job has failed
         if: ${{ failure() }}
-        run: |
-          ./infrastructure/gitlab/status.sh "state=failed"
-          ls -la android/app/build/intermediates/sourcemaps/react/staging/
-          ls -la android/app/build/generated/sourcemaps/react/staging/
+        run: ./infrastructure/gitlab/status.sh "state=failed"
 
       - name: The job has success
         run: ./infrastructure/gitlab/status.sh "state=success"
