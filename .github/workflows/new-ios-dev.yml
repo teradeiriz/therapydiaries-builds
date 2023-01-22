@@ -70,12 +70,6 @@ jobs:
     - name: Notify gitlab
       run: ./infrastructure/gitlab/status.sh "state=running&description=$GITHUB_RUN_ID"
 
-    - name: Install Ruby 2.x
-      uses: ruby/setup-ruby@v1
-      with:
-        ruby-version: "2.7.6"
-        bundler-cache: true
-
     - name: Yarn cache
       uses: actions/cache@v3
       id: yarn_cache
@@ -83,15 +77,6 @@ jobs:
         path: node_modules
         key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
         restore-keys: ${{ runner.os }}-yarn-
-
-    - name: Metro cache
-      uses: actions/cache@v3
-      with:
-        path: |
-          $TMPDIR/haste-map-*
-          $TMPDIR/metro-cache
-        key: ${{ runner.os }}-metro-${{ hashFiles('yarn.lock') }}
-        restore-keys: ${{ runner.os }}-metro-
 
     - run: yarn install --frozen-lockfile
       if: steps.yarn_cache.outputs.cache-hit != 'true'
@@ -107,6 +92,12 @@ jobs:
 
     - run: pod install
       working-directory: ios
+
+    - name: Install Ruby 2.x
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: "2.7.6"
+        bundler-cache: true
 
     - run: bundle install --jobs 4 --retry 3
 
