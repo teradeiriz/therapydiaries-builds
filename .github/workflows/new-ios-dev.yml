@@ -44,6 +44,8 @@ jobs:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
     - uses: actions/checkout@v3
 
+    - run: npx envinfo
+
     - name: Check all required variables
       run: sh ./scripts/common-check.sh && sh ./scripts/ios-dev-check.sh
 
@@ -81,6 +83,8 @@ jobs:
 
     - run: yarn install --frozen-lockfile
       if: steps.yarn_cache.outputs.cache-hit != 'true'
+
+    - run: yarn postinstall
 
     - name: Pods cache
       uses: actions/cache@v3
