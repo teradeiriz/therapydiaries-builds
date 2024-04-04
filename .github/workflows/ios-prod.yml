@@ -36,7 +36,8 @@ jobs:
       OAUTH_CLIENT_ID_IOS: ${{ secrets.OAUTH_CLIENT_ID_IOS }}
       AMPLITUDE_API_KEY: ${{ secrets.AMPLITUDE_API_KEY }}
       APPSFLYER_API_KEY: ${{ secrets.APPSFLYER_API_KEY }}
-      REVENUECAT_API_KEY: ${{ secrets.REVENUECAT_API_KEY }}
+      REVENUECAT_API_KEY_IOS: ${{ secrets.REVENUECAT_API_KEY_IOS }}
+      REVENUECAT_API_KEY_ANDROID: ${{ secrets.REVENUECAT_API_KEY_ANDROID }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
     steps:
