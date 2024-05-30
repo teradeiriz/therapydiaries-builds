@@ -70,9 +70,6 @@ jobs:
           git clone "$REPO_URL" --branch="$CURRENT_BRANCH" --single ./
           git log -1
 
-      - name: Notify gitlab
-        run: ./infrastructure/gitlab/status.sh "state=running&description=$GITHUB_RUN_ID"
-
       - name: Install Ruby 2.x
         uses: ruby/setup-ruby@v1
         with:
