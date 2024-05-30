@@ -94,14 +94,3 @@ jobs:
 
       - name: Run fastlane line "fastlane ios deploy" with PROD ENV variables
         run: bundle exec fastlane ios deploy
-
-      - name: The job has cancelled
-        if: ${{ cancelled() }}
-        run: ./infrastructure/gitlab/status.sh "state=canceled"
-
-      - name: The job has failed
-        if: ${{ failure() }}
-        run: ./infrastructure/gitlab/status.sh "state=failed"
-
-      - name: The job has success
-        run: ./infrastructure/gitlab/status.sh "state=success"
