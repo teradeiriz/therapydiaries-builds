@@ -10,6 +10,7 @@ jobs:
   distribute-apk:
     runs-on: ubuntu-22.04
     env:
+      RUBYOPT: -rostruct
       NODE_OPTIONS: --max_old_space_size=4096
       SENTRY_LOG_LEVEL: debug
       SENTRY_PROPERTIES: ./android/sentry.properties
