@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-20.04
 
     env:
+      RUBYOPT: -rostruct
       SENTRY_PROPERTIES: ./android/sentry.properties
       SSH_AUTH_SOCK: /tmp/ssh_agent.sock
       USER_NAME: ${{ secrets.GITLAB_USER_NAME }}
