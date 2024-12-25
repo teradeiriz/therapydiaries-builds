@@ -94,6 +94,12 @@ jobs:
 
       - run: yarn postinstall
 
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'zulu'
+
       - name: Install Ruby 2.x
         uses: ruby/setup-ruby@v1
         with:
