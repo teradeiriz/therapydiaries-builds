@@ -14,6 +14,7 @@ jobs:
         # macos-14:     CPU: (3) arm64 Apple M1 (Virtual);            Memory: 89.83 MB / 7.00 GB
         # ubuntu-24.04: CPU: (4) x64 AMD EPYC 7763 64-Core Processor; Memory: 14.56 GB / 15.62 GB
         os: [ ubuntu-24.04 ] # M1 not a really faster than x64, TODO re-check after RN will be updated
+        # ^^^ check Ruby version in `npx envinfo` and re-enable install step if needed
         ruby: [ '3.2'] # TODO update to 3.3 when Gems will be updated
         java: [ '17' ] # TODO update to 21 when RN will be updated
 
@@ -57,7 +58,7 @@ jobs:
         run: sh ./scripts/common-check.sh && sh ./scripts/android-dev-check.sh
 
       - name: Fix error 'ENOSPC - System limit for number of file watchers reached'
-        if: ${{ startsWith(runner.os, 'ubuntu-') }}
+        if: ${{ startsWith(matrix.os, 'ubuntu-') }}
         run: echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
 
       - name: Configure git users
@@ -110,11 +111,13 @@ jobs:
           java-version: ${{ matrix.java }}
           distribution: 'zulu'
 
-      - name: Install Ruby ${{ matrix.ruby }}
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: ${{ matrix.ruby }}
-          bundler-cache: true
+# Skip install Ruby 3.2.x (save 30sec) because it's already installed
+# see `nxp envinfo`, have to be: `Ruby: 3.2.3 - /usr/bin/ruby`)
+#      - name: Install Ruby ${{ matrix.ruby }}
+#        uses: ruby/setup-ruby@v1
+#        with:
+#          ruby-version: ${{ matrix.ruby }}
+#          bundler-cache: true
 
       - run: bundle install --jobs 4 --retry 3
 
