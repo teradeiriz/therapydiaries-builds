@@ -8,7 +8,14 @@ on:
 
 jobs:
   distribute-apk:
-    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-24.04, macos-14 ]
+        ruby: [ '2.7', '3.0', '3.1', '3.2', '3.3' ]
+        java: [ '17', '19', '21' ]
+
+    runs-on: ${{ matrix.os }}
     env:
       RUBYOPT: -rostruct
       NODE_OPTIONS: --max_old_space_size=4096
@@ -71,8 +78,8 @@ jobs:
           git clone "$REPO_URL" --branch="$CURRENT_BRANCH" --single --depth=1 ./
           git log -1
 
-      - name: Notify gitlab
-        run: ./infrastructure/gitlab/status.sh "state=running&description=$GITHUB_RUN_ID"
+#      - name: Notify gitlab
+#        run: ./infrastructure/gitlab/status.sh "state=running&description=$GITHUB_RUN_ID"
 
       - name: Decrypt keystore and Google Credentials
         run: |
@@ -94,16 +101,16 @@ jobs:
 
       - run: yarn postinstall
 
-      - name: Set up JDK 17
+      - name: Set up JDK ${{ matrix.java }}
         uses: actions/setup-java@v4
         with:
-          java-version: '21'
+          java-version: ${{ matrix.java }}
           distribution: 'zulu'
 
-      - name: Install Ruby 2.x
+      - name: Install Ruby ${{ matrix.ruby }}
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "3.1"
+          ruby-version: ${{ matrix.ruby }}
           bundler-cache: true
 
       - run: bundle install --jobs 4 --retry 3
@@ -113,13 +120,13 @@ jobs:
         env:
           BETA_BUILD: true
 
-      - name: The job has cancelled
-        if: ${{ cancelled() }}
-        run: ./infrastructure/gitlab/status.sh "state=canceled"
-
-      - name: The job has failed
-        if: ${{ failure() }}
-        run: ./infrastructure/gitlab/status.sh "state=failed"
-
-      - name: The job has success
-        run: ./infrastructure/gitlab/status.sh "state=success"
+#      - name: The job has cancelled
+#        if: ${{ cancelled() }}
+#        run: ./infrastructure/gitlab/status.sh "state=canceled"
+#
+#      - name: The job has failed
+#        if: ${{ failure() }}
+#        run: ./infrastructure/gitlab/status.sh "state=failed"
+#
+#      - name: The job has success
+#        run: ./infrastructure/gitlab/status.sh "state=success"
