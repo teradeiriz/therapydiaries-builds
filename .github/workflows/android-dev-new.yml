@@ -55,6 +55,7 @@ jobs:
         run: sh ./scripts/common-check.sh && sh ./scripts/android-dev-check.sh
 
       - name: Fix error 'ENOSPC - System limit for number of file watchers reached'
+        if: ${{ runner.os == 'ubuntu-24.04' }}
         run: echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
 
       - name: Configure git users
