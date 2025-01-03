@@ -13,7 +13,7 @@ jobs:
       matrix:
         # macos-14:     CPU: (3) arm64 Apple M1 (Virtual);            Memory: 89.83 MB / 7.00 GB
         os: [ macos-14 ] # Xcode 15.0.1, see: https://github.com/actions/runner-images/blob/main/images/macos/macos-14-Readme.md#xcode
-        ruby: [ '3.2' ] # TODO update to 3.3 when Gems will be updated
+        ruby: [ '2.7' ] # TODO update to 3.3 when Gems/RN/Firebase will be updated
 
     runs-on: ${{ matrix.os }}
 
@@ -82,18 +82,27 @@ jobs:
     - name: Notify gitlab
       run: ./infrastructure/gitlab/status.sh "state=running&description=$GITHUB_RUN_ID"
 
-    - name: Yarn cache
-      uses: actions/cache@v4
-      id: yarn_cache
+    - name: Restore Yarn cache
+      id: yarn_cache_restore
+      uses: actions/cache/restore@v4
       with:
         path: node_modules
-        key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
+        key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}-patches-${{ hashFiles('patches/*.patch') }}
         restore-keys: ${{ runner.os }}-yarn-
 
     - run: yarn install --frozen-lockfile
-      if: steps.yarn_cache.outputs.cache-hit != 'true'
+      if: steps.yarn_cache_restore.outputs.cache-hit != 'true'
 
     - run: yarn postinstall
+
+    - name: Save Yarn cache
+      id: yarn_cache_save
+      uses: actions/cache/save@v4
+      if: steps.yarn_cache_restore.outputs.cache-hit != 'true'
+      with:
+        path: node_modules
+        key: ${{ steps.yarn_cache_restore.outputs.cache-primary-key }}
+
 
     - name: Pods cache
       uses: actions/cache@v4
@@ -108,13 +117,11 @@ jobs:
       working-directory: ios
 
 
-# Skip install Ruby 3.x (save 17sec) because it's already installed
-# see `nxp envinfo`, have to be: `Ruby: 3.0.7 - /opt/homebrew/opt/ruby@3.0/bin/ruby`)
-#    - name: Install Ruby ${{ matrix.ruby }}
-#      uses: ruby/setup-ruby@v1
-#      with:
-#        ruby-version: ${{ matrix.ruby }}
-#        bundler-cache: true
+    - name: Install Ruby ${{ matrix.ruby }}
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: ${{ matrix.ruby }}
+        bundler-cache: true
 
     - run: bundle install --jobs 4 --retry 3
 

@@ -92,18 +92,26 @@ jobs:
           gpg --quiet --batch --yes --decrypt --passphrase="$ENCRYPT_PASSWORD" \
           --output ./android/keystores/google-private-key.json ./android/keystores/google-private-key.json.gpg
 
-      - name: Yarn cache
-        uses: actions/cache@v4
-        id: yarn_cache
+      - name: Restore Yarn cache
+        id: yarn_cache_restore
+        uses: actions/cache/restore@v4
         with:
           path: node_modules
-          key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}
+          key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}-patches-${{ hashFiles('patches/*.patch') }}
           restore-keys: ${{ runner.os }}-yarn-
 
       - run: yarn install --frozen-lockfile
-        if: steps.yarn_cache.outputs.cache-hit != 'true'
+        if: steps.yarn_cache_restore.outputs.cache-hit != 'true'
 
       - run: yarn postinstall
+
+      - name: Save Yarn cache
+        id: yarn_cache_save
+        uses: actions/cache/save@v4
+        if: steps.yarn_cache_restore.outputs.cache-hit != 'true'
+        with:
+          path: node_modules
+          key: ${{ steps.yarn_cache_restore.outputs.cache-primary-key }}
 
       - name: Set up JDK ${{ matrix.java }}
         uses: actions/setup-java@v4
