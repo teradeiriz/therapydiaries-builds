@@ -90,8 +90,15 @@ jobs:
         key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}-patches-${{ hashFiles('patches/*.patch') }}
         restore-keys: ${{ runner.os }}-yarn-
 
-    - run: yarn install --frozen-lockfile
+    - name: Install node_modules
       if: steps.yarn_cache_restore.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        # Retry 3 times before the steps actually fails
+        (echo "===== Install node_modules Attempt:  1 ====" && yarn install --frozen-lockfile) || \
+        (echo "===== Install node_modules Attempt:  2 ====" && yarn install --frozen-lockfile) || \
+        (echo "===== Install node_modules Attempt:  3 ====" && yarn install --frozen-lockfile) || \
+        (echo "===== Install node_modules Step Failed ====" && exit 1)
 
     - run: yarn postinstall
 
