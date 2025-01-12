@@ -13,7 +13,7 @@ jobs:
       matrix:
         # macos-14:     CPU: (3) arm64 Apple M1 (Virtual);            Memory: 89.83 MB / 7.00 GB
         os: [ macos-14 ] # Xcode 15.0.1, see: https://github.com/actions/runner-images/blob/main/images/macos/macos-14-Readme.md#xcode
-        ruby: [ '2.7' ] # TODO update to 3.3 when Gems/RN/Firebase will be updated
+        ruby: [ '2.7', '3.3.6' ] # TODO update to 3.3 when Gems/RN/Firebase will be updated
 
     runs-on: ${{ matrix.os }}
 
