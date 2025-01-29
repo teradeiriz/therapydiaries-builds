@@ -8,7 +8,7 @@ on:
 
 jobs:
   deploy-ios-to-test-flight:
-    runs-on: macos-15 # Xcode 16, see: https://github.com/actions/runner-images/blob/main/images/macos/macos-14-Readme.md#xcode
+    runs-on: macos-14 # Xcode 15.0.1, see: https://github.com/actions/runner-images/blob/main/images/macos/macos-14-Readme.md#xcode
 
     env:
       SENTRY_PROPERTIES: ./ios/sentry.properties
