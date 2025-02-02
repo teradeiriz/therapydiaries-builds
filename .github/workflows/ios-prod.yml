@@ -11,7 +11,7 @@ jobs:
     runs-on: macos-14 # Xcode 15.0.1, see: https://github.com/actions/runner-images/blob/main/images/macos/macos-14-Readme.md#xcode
 
     env:
-      SENTRY_PROPERTIES: ./ios/sentry.properties
+      SENTRY_PROPERTIES: ${{ github.workspace }}/ios/sentry.properties
       SSH_AUTH_SOCK: /tmp/ssh_agent.sock
       CURRENT_BRANCH: ${{ github.event.client_payload.branch }}
       GIT_LAB_COMMIT_SHA: ${{ github.event.client_payload.commit_sha }}
