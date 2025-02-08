@@ -8,8 +8,16 @@ on:
 
 jobs:
   deploy-ios-to-test-flight:
-    runs-on: macos-15 # Xcode 16, see: https://github.com/actions/runner-images/blob/main/images/macos/macos-14-Readme.md#xcode
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ macos-15 ] 
+        # ^^^ macos-15 Installed Software: https://github.com/actions/runner-images/blob/main/images/macos/macos-15-Readme.md
+        ruby: [ '3.3.6' ]
+        xcode: [ '16.2' ] 
+        # ^^^ See all Xcode versions (for macos-15): https://github.com/actions/runner-images/blob/main/images/macos/macos-15-Readme.md#xcode
 
+    runs-on: ${{ matrix.os }}
     env:
       SENTRY_PROPERTIES: ${{ github.workspace }}/ios/sentry.properties
       SSH_AUTH_SOCK: /tmp/ssh_agent.sock
@@ -75,10 +83,13 @@ jobs:
           git clone "$REPO_URL" --branch="$CURRENT_BRANCH" --single ./
           git log -1
 
-      - name: Install Ruby 2.x
+      - name: Select Xcode ${{ matrix.xcode }} Version
+        run: sudo xcode-select -switch /Applications/Xcode_${{ matrix.xcode }}.app
+
+      - name: Install Ruby ${{ matrix.ruby }}
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "2.7.6"
+          ruby-version: ${{ matrix.ruby }}
           bundler-cache: false
 
       - name: Install node_modules
