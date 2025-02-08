@@ -125,7 +125,7 @@ jobs:
         key: ${{ runner.os }}-pods-${{ hashFiles('ios/Podfile.lock') }}
         restore-keys: ${{ runner.os }}-pods-
 
-    - run: pod install
+    - run: RCT_NEW_ARCH_ENABLED=0 pod install
       working-directory: ios
 
 
