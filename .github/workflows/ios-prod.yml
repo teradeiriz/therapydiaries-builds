@@ -20,6 +20,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       SENTRY_PROPERTIES: ${{ github.workspace }}/ios/sentry.properties
+      SENTRY_ALLOW_FAILURE: ${{ secrets.SENTRY_ALLOW_FAILURE }}
       SSH_AUTH_SOCK: /tmp/ssh_agent.sock
       CURRENT_BRANCH: ${{ github.event.client_payload.branch }}
       GIT_LAB_COMMIT_SHA: ${{ github.event.client_payload.commit_sha }}
