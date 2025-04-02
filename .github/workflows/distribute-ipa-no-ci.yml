@@ -1,14 +1,24 @@
-name: Distribute IPA to Firebase App Distribution
+name: new Distribute IPA to Firebase App Distribution
 
 # Controls when the action will run. Triggers the workflow on push or pull request
 # events but only for the master branch
 on:
   repository_dispatch:
-    types: ['distribute-ipa']
+    types: ['distribute-ipa-no-ci']
 
 jobs:
   distribute-ipa:
-    runs-on: macos-11
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ macos-15 ] 
+        # ^^^ macos-15 Installed Software: https://github.com/actions/runner-images/blob/main/images/macos/macos-15-Readme.md
+        ruby: [ '3.3.6' ]
+        xcode: [ '16.2' ] 
+        # ^^^ See all Xcode versions (for macos-15): https://github.com/actions/runner-images/blob/main/images/macos/macos-15-Readme.md#xcode
+
+    runs-on: ${{ matrix.os }}
+
     env:
       SENTRY_PROPERTIES: ${{ github.workspace }}/ios/sentry.properties
       SENTRY_DIST: 0
@@ -35,13 +45,17 @@ jobs:
       GIT_LAB_ACCESS_TOKEN: ${{ secrets.GIT_LAB_ACCESS_TOKEN }}
       СUSTOM_BUILD_NUMBER: ${{ github.run_number }}
       OAUTH_CLIENT_ID_IOS: ${{ secrets.OAUTH_CLIENT_ID_IOS_STAGING }}
+      ACTIONS_STEP_DEBUG: true
       AMPLITUDE_API_KEY: ${{ secrets.AMPLITUDE_API_KEY_STAGING }}
       REVENUECAT_API_KEY_IOS: ${{ secrets.REVENUECAT_API_KEY_IOS }}
       REVENUECAT_API_KEY_ANDROID: ${{ secrets.REVENUECAT_API_KEY_ANDROID }}
+      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
+
+    - run: npx envinfo
 
     - name: Check all required variables
       run: sh ./scripts/common-check.sh && sh ./scripts/ios-dev-check.sh
@@ -67,70 +81,68 @@ jobs:
         git clone "$REPO_URL" --branch="$CURRENT_BRANCH" --single --depth=1 ./
         git log -1
 
-    - name: Notify gitlab
-      run: ./infrastructure/gitlab/status.sh "state=running&description=$GITHUB_RUN_ID"
+    - name: Select Xcode ${{ matrix.xcode }} Version
+      run: sudo xcode-select -switch /Applications/Xcode_${{ matrix.xcode }}.app
 
-    # Get cocoapods version based on Podfile.lock
-    - name: setup-cocoapods
-      uses: maxim-lobanov/setup-cocoapods@v1
-      with:
-        podfile-path: ./ios/Podfile.lock
-
-    - name: Install Ruby 2.x
-      uses: actions/setup-ruby@v1
-      with:
-        ruby-version: '2.x'
-
-    - name: Install Firebase
-      run: |
-        curl -sL https://firebase.tools | bash
-        which firebase
-      shell: bash
-
-    - uses: actions/cache@master
-      id: yarn_cache
+    - name: Restore Yarn cache
+      id: yarn_cache_restore
+      uses: actions/cache/restore@v4
       with:
         path: node_modules
-        key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+        key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}-patches-${{ hashFiles('patches/*.patch') }}
+        restore-keys: ${{ runner.os }}-yarn-
 
-    - run: yarn install --frozen-lockfile
-      if: steps.yarn_cache.outputs.cache-hit != 'true'
+    - name: Install node_modules
+      if: steps.yarn_cache_restore.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        # Retry 3 times before the steps actually fails
+        (echo "===== Install node_modules Attempt:  1 ====" && yarn install --frozen-lockfile) || \
+        (echo "===== Install node_modules Attempt:  2 ====" && yarn install --frozen-lockfile) || \
+        (echo "===== Install node_modules Attempt:  3 ====" && yarn install --frozen-lockfile) || \
+        (echo "===== Install node_modules Step Failed ====" && exit 1)
 
-    - uses: actions/cache@master
+    - run: yarn postinstall
+
+    - name: Save Yarn cache
+      id: yarn_cache_save
+      uses: actions/cache/save@v4
+      if: steps.yarn_cache_restore.outputs.cache-hit != 'true'
       with:
-        path: ~/Library/Caches/CocoaPods
-        key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
+        path: node_modules
+        key: ${{ steps.yarn_cache_restore.outputs.cache-primary-key }}
 
-    - uses: actions/cache@master
+
+    - name: Pods cache
+      uses: actions/cache@v4
       with:
-        path: ~/.cocoapods
-        key: ${{ runner.os }}-pods-${{ hashFiles('**/Podfile.lock') }}
+        path: |
+          ~/.cocoapods
+          ~/Library/Caches/CocoaPods
+        key: ${{ runner.os }}-pods-${{ hashFiles('ios/Podfile.lock') }}
+        restore-keys: ${{ runner.os }}-pods-
 
-    - run: pod install
+    - run: RCT_NEW_ARCH_ENABLED=0 pod install
       working-directory: ios
 
-    - uses: actions/cache@master
-      id: ruby_cache
-      with:
-        path: vendor/bundle
-        key: ${{ runner.os }}-gems-${{ hashFiles('**/Gemfile.lock') }}
 
-    - name: Install gem dependencies
-      if: steps.ruby_cache.outputs.cache-hit != 'true'
-      run: |
-        bundle config path vendor/bundle
-        bundle install --jobs 4 --retry 3
+    - name: Install Ruby ${{ matrix.ruby }}
+      uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: ${{ matrix.ruby }}
+        bundler-cache: true
+
+    - run: bundle install --jobs 4 --retry 3
+
+    - name: iOS build cache
+      uses: actions/cache@v4
+      env:
+        ACTIONS_STEP_DEBUG: true
+      with:
+        path: .local_derived_data
+        key: ${{ runner.os }}-pods-derived-data-${{ hashFiles('ios/Podfile.lock') }}
 
     - name: Run fastlane line "fastlane ios distribute" with PROD ENV variables
       run: bundle exec fastlane ios distribute
-
-    - name: The job has cancelled
-      if: ${{ cancelled() }}
-      run: ./infrastructure/gitlab/status.sh "state=canceled"
-
-    - name: The job has failed
-      if: ${{ failure() }}
-      run: ./infrastructure/gitlab/status.sh "state=failed"
-
-    - name: The job has success
-      run: ./infrastructure/gitlab/status.sh "state=success"
+      env:
+        BETA_BUILD: true
