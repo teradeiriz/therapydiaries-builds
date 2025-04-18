@@ -71,10 +71,10 @@ jobs:
           git clone "$REPO_URL" --branch="$CURRENT_BRANCH" --single ./
           git log -1
 
-      - name: Install Ruby 2.x
+      - name: Install Ruby 3.3.6
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: "2.7.6"
+          ruby-version: "3.3.6"
           bundler-cache: true
 
       - name: Set up JDK 17
