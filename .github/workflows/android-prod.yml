@@ -45,11 +45,7 @@ jobs:
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v3
-
-      # Fix "Installed Build Tools revision 31.0.0 is corrupted. Remove and install again using the SDK Manager."
-      # See: https://stackoverflow.com/questions/68387270/android-studio-error-installed-build-tools-revision-31-0-0-is-corrupted
-      - run: cd /usr/local/lib/android/sdk/build-tools/31.0.0 && mv d8 dx  && cd lib && mv d8.jar dx.jar
+      - uses: actions/checkout@v4
 
       - name: Check all required variables
         run: sh ./scripts/common-check.sh && sh ./scripts/android-prod-check.sh
