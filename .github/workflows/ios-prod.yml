@@ -38,7 +38,6 @@ jobs:
       FASTLANE_SESSION: ${{ secrets.FASTLANE_SESSION }}
       MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
       MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-      FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD: ${{ secrets.FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD }}
       BUMP_TYPE: ${{ github.event.client_payload.bump_type }}
       APP_RELEASE_VERSION: ${{ github.event.client_payload.app_release_version }}
       GIT_LAB_ACCESS_TOKEN: ${{ secrets.GIT_LAB_ACCESS_TOKEN }}
@@ -48,6 +47,9 @@ jobs:
       REVENUECAT_API_KEY_IOS: ${{ secrets.REVENUECAT_API_KEY_IOS }}
       REVENUECAT_API_KEY_ANDROID: ${{ secrets.REVENUECAT_API_KEY_ANDROID }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+      APP_STORE_CONNECT_KEY_IDENTIFIER: ${{ secrets.APP_STORE_CONNECT_KEY_IDENTIFIER }}
+      APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
