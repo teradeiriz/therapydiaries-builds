@@ -38,6 +38,7 @@ jobs:
       FASTLANE_SESSION: ${{ secrets.FASTLANE_SESSION }}
       MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
       MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
+      FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD: ${{ secrets.FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD }}
       BUMP_TYPE: ${{ github.event.client_payload.bump_type }}
       APP_RELEASE_VERSION: ${{ github.event.client_payload.app_release_version }}
       GIT_LAB_ACCESS_TOKEN: ${{ secrets.GIT_LAB_ACCESS_TOKEN }}
