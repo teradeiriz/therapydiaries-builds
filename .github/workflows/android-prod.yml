@@ -91,6 +91,15 @@ jobs:
 
       - run: yarn install --frozen-lockfile
 
+      - name: Install node_modules
+        shell: bash
+        run: |
+          # Retry 3 times before the steps actually fails
+          (echo "===== Install node_modules Attempt:  1 ====" && yarn install --frozen-lockfile) || \
+          (echo "===== Install node_modules Attempt:  2 ====" && yarn install --frozen-lockfile) || \
+          (echo "===== Install node_modules Attempt:  3 ====" && yarn install --frozen-lockfile) || \
+          (echo "===== Install node_modules Step Failed ====" && exit 1)
+
       - name: Decrypt keystore and Google Credentials
         run: |
           gpg --quiet --batch --yes --decrypt --passphrase="$ENCRYPT_PASSWORD" \
