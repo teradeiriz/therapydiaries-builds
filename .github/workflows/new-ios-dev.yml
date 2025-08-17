@@ -125,8 +125,14 @@ jobs:
         key: ${{ runner.os }}-pods-${{ hashFiles('ios/Podfile.lock') }}
         restore-keys: ${{ runner.os }}-pods-
 
-    - run: RCT_NEW_ARCH_ENABLED=0 pod install
+    - name: Install pods
       working-directory: ios
+      run: |
+        if grep -q '"react-native": "0.76.7"' package.json; then
+          RCT_NEW_ARCH_ENABLED=0 pod install
+        else
+          RCT_NEW_ARCH_ENABLED=1 pod install
+        fi
 
 
     - name: Install Ruby ${{ matrix.ruby }}
