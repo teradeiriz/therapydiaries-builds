@@ -14,7 +14,7 @@ jobs:
         os: [ macos-15 ] 
         # ^^^ macos-15 Installed Software: https://github.com/actions/runner-images/blob/main/images/macos/macos-15-Readme.md
         ruby: [ '3.3.6' ]
-        xcode: [ '16.2' ] 
+        xcode: [ '16.4' ] 
         # ^^^ See all Xcode versions (for macos-15): https://github.com/actions/runner-images/blob/main/images/macos/macos-15-Readme.md#xcode
 
     runs-on: ${{ matrix.os }}
@@ -128,11 +128,13 @@ jobs:
     - name: Install pods
       working-directory: ios
       run: |
+        ls -la;
         if grep -q '"react-native": "0.76.7"' package.json; then
           RCT_NEW_ARCH_ENABLED=0 pod install
         else
           RCT_NEW_ARCH_ENABLED=1 pod install
         fi
+        cat package.json || echo 1;
 
 
     - name: Install Ruby ${{ matrix.ruby }}
