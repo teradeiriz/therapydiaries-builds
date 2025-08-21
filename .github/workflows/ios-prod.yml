@@ -87,8 +87,10 @@ jobs:
           git clone "$REPO_URL" --branch="$CURRENT_BRANCH" --single ./
           git log -1
 
-      - name: Select Xcode ${{ matrix.xcode }} Version
-        run: sudo xcode-select -switch /Applications/Xcode_${{ matrix.xcode }}.app
+      - name: Setup Xcode
+        uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ matrix.xcode }}
 
       - name: Install Ruby ${{ matrix.ruby }}
         uses: ruby/setup-ruby@v1
