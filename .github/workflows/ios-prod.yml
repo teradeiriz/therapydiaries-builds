@@ -106,7 +106,7 @@ jobs:
           (echo "===== Install node_modules Step Failed ====" && exit 1)
 
       - name: Install pods
-        run: RCT_NEW_ARCH_ENABLED=0 pod install
+        run: RCT_NEW_ARCH_ENABLED=1 pod install
         working-directory: ios
 
       - name: Install gem dependencies
