@@ -47,14 +47,6 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4
 
-      - name: Free disk space (GitHub runner workaround)
-        run: |
-          sudo rm -rf /opt/hostedtoolcache/*
-          sudo rm -rf ~/.cache
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf /usr/local/lib/android
-          df -h
-
       - name: Check all required variables
         run: sh ./scripts/common-check.sh && sh ./scripts/android-prod-check.sh
 
@@ -111,5 +103,12 @@ jobs:
           gpg --quiet --batch --yes --decrypt --passphrase="$ENCRYPT_PASSWORD" \
           --output ./android/keystores/google-private-key.json ./android/keystores/google-private-key.json.gpg
 
+      - name: Clean before Fastlane
+        run: |
+          rm -rf node_modules/.cache
+          rm -rf android/.gradle
+          rm -rf ~/.gradle/caches
+          df -h
+          
       - name: Run fastlane line "fastlane android deploy" with PROD ENV variables
         run: bundle exec fastlane android deploy
