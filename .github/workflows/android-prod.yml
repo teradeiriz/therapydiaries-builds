@@ -111,12 +111,5 @@ jobs:
           gpg --quiet --batch --yes --decrypt --passphrase="$ENCRYPT_PASSWORD" \
           --output ./android/keystores/google-private-key.json ./android/keystores/google-private-key.json.gpg
 
-      - name: Clean before Fastlane
-        run: |
-          rm -rf node_modules/.cache
-          rm -rf android/.gradle
-          rm -rf ~/.gradle/caches
-          df -h
-          
       - name: Run fastlane line "fastlane android deploy" with PROD ENV variables
         run: bundle exec fastlane android deploy
