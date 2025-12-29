@@ -44,11 +44,10 @@ jobs:
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
     steps:
-      # Checkout only to bootstrap the workspace
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4
 
-      # 🔥 CRITICAL: Free disk space early (GitHub runner workaround)
-      - name: Free disk space
+      - name: Free disk space (GitHub runner workaround)
         run: |
           sudo rm -rf /opt/hostedtoolcache/*
           sudo rm -rf ~/.cache
@@ -77,12 +76,11 @@ jobs:
             ssh-agent -a $SSH_AUTH_SOCK > /dev/null
             ssh-add ~/.ssh/id_rsa
 
-      # ✅ Safer repo replacement (no full workspace nuke)
       - name: Get repository
         run: |
-          rm -rf app
-          git clone "$REPO_URL" --branch="$CURRENT_BRANCH" --single-branch app
-          cd app
+          rm -rf ./.git ./.github ./.gitignore ./*
+          ls -la ./
+          git clone "$REPO_URL" --branch="$CURRENT_BRANCH" --single ./
           git log -1
 
       - name: Set up JDK ${{ matrix.java }}
@@ -95,10 +93,9 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: ${{ matrix.ruby }}
-          bundler-cache: true   # 🚫 no separate bundle install
+          bundler-cache: true
 
       - name: Install node_modules
-        working-directory: app
         shell: bash
         run: |
           # Retry 3 times before the steps actually fails
@@ -108,22 +105,18 @@ jobs:
           (echo "===== Install node_modules Step Failed ====" && exit 1)
 
       - name: Decrypt keystore and Google Credentials
-        working-directory: app
         run: |
           gpg --quiet --batch --yes --decrypt --passphrase="$ENCRYPT_PASSWORD" \
           --output ./android/keystores/release.keystore ./android/keystores/release.keystore.gpg
           gpg --quiet --batch --yes --decrypt --passphrase="$ENCRYPT_PASSWORD" \
           --output ./android/keystores/google-private-key.json ./android/keystores/google-private-key.json.gpg
 
-      # 🧹 CRITICAL: Clean before the heaviest step
-      - name: Clean caches before Fastlane
-        working-directory: app
+      - name: Clean before Fastlane
         run: |
           rm -rf node_modules/.cache
           rm -rf android/.gradle
           rm -rf ~/.gradle/caches
           df -h
-
-      - name: Run Fastlane (Android Deploy)
-        working-directory: app
+          
+      - name: Run fastlane line "fastlane android deploy" with PROD ENV variables
         run: bundle exec fastlane android deploy
