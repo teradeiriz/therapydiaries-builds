@@ -14,12 +14,11 @@ jobs:
         # macos-14:     CPU: (3) arm64 Apple M1 (Virtual);            Memory: 89.83 MB / 7.00 GB
         # ubuntu-24.04: CPU: (4) x64 AMD EPYC 7763 64-Core Processor; Memory: 14.56 GB / 15.62 GB
         os: [ ubuntu-24.04 ] # M1 not a really faster than x64, TODO re-check after RN will be updated
-        ruby: [ '3.2'] # TODO update to 3.3 when Gems will be updated
-        java: [ '17' ] # TODO update to 21 when RN will be updated
+        ruby: [ '3.3.6'] # TODO update to 3.3 when Gems will be updated
+        java: [ '21' ] # TODO update to 21 when RN will be updated
 
     runs-on: ${{ matrix.os }}
     env:
-      RUBYOPT: -rostruct
       NODE_OPTIONS: --max_old_space_size=4096
       SENTRY_LOG_LEVEL: debug
       SENTRY_PROPERTIES: ./android/sentry.properties
@@ -46,6 +45,8 @@ jobs:
       REVENUECAT_API_KEY_IOS: ${{ secrets.REVENUECAT_API_KEY_IOS }}
       REVENUECAT_API_KEY_ANDROID: ${{ secrets.REVENUECAT_API_KEY_ANDROID }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      TIKTOK_APP_ID: ${{ secrets.TIKTOK_APP_ID }}
+      TIKTOK_ACCESS_TOKEN: ${{ secrets.TIKTOK_ACCESS_TOKEN }}
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
