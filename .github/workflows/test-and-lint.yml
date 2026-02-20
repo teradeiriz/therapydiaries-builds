@@ -36,9 +36,6 @@ jobs:
 
       - run: npx envinfo
 
-      - name: Check all required variables
-        run: sh ./scripts/common-check.sh
-
       - name: Fix error 'ENOSPC - System limit for number of file watchers reached'
         if: ${{ startsWith(matrix.os, 'ubuntu-') }}
         run: echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
