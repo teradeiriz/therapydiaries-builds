@@ -11,9 +11,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # macos-14:     CPU: (3) arm64 Apple M1 (Virtual);            Memory: 89.83 MB / 7.00 GB
+        # macos-26:     CPU: (3) arm64 Apple M1 (Virtual);            Memory: 89.83 MB / 7.00 GB
         # ubuntu-24.04: CPU: (4) x64 AMD EPYC 7763 64-Core Processor; Memory: 14.56 GB / 15.62 GB
-        os: [ ubuntu-24.04, macos-15, macos-26 ] # M1 not a really faster than x64
+        os: [ ubuntu-24.04 ] # macos-26 has when same performance as ubuntu-24.04 for this job
 
     runs-on: ${{ matrix.os }}
     env:
@@ -34,7 +34,7 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4
 
-      - run: npx envinfo
+      # - run: npx envinfo
 
       - name: Fix error 'ENOSPC - System limit for number of file watchers reached'
         if: ${{ startsWith(matrix.os, 'ubuntu-') }}
@@ -63,13 +63,6 @@ jobs:
 
       - name: Notify gitlab
         run: ./infrastructure/gitlab/status.sh "state=running&description=$GITHUB_RUN_ID"
-
-      - name: Decrypt keystore and Google Credentials
-        run: |
-          gpg --quiet --batch --yes --decrypt --passphrase="$ENCRYPT_PASSWORD" \
-          --output ./android/keystores/release.keystore ./android/keystores/release.keystore.gpg
-          gpg --quiet --batch --yes --decrypt --passphrase="$ENCRYPT_PASSWORD" \
-          --output ./android/keystores/google-private-key.json ./android/keystores/google-private-key.json.gpg
 
       - name: Restore Yarn cache
         id: yarn_cache_restore
