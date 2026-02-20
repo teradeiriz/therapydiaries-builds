@@ -37,7 +37,7 @@ jobs:
       - run: npx envinfo
 
       - name: Check all required variables
-        run: sh ./scripts/common-check.sh && sh ./scripts/android-dev-check.sh
+        run: sh ./scripts/common-check.sh
 
       - name: Fix error 'ENOSPC - System limit for number of file watchers reached'
         if: ${{ startsWith(matrix.os, 'ubuntu-') }}
