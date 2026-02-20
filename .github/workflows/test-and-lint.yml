@@ -4,26 +4,20 @@ name: Distribute APK App to Firebase App Distribution
 # events but only for the master branch
 on:
   repository_dispatch:
-    types: ["distribute-apk"]
+    types: ["code-quality"]
 
 jobs:
-  distribute-apk:
+  code-quality:
     strategy:
       fail-fast: false
       matrix:
         # macos-14:     CPU: (3) arm64 Apple M1 (Virtual);            Memory: 89.83 MB / 7.00 GB
         # ubuntu-24.04: CPU: (4) x64 AMD EPYC 7763 64-Core Processor; Memory: 14.56 GB / 15.62 GB
-        os: [ ubuntu-24.04 ] # M1 not a really faster than x64
-        ruby: [ '3.4.2']
-        java: [ '21' ]
+        os: [ ubuntu-24.04, macos-15, macos-26 ] # M1 not a really faster than x64
 
     runs-on: ${{ matrix.os }}
     env:
       NODE_OPTIONS: --max_old_space_size=4096
-      SENTRY_LOG_LEVEL: debug
-      SENTRY_PROPERTIES: ./android/sentry.properties
-      SENTRY_DIST: 0
-      SENTRY_RELEASE: alpha
       SSH_AUTH_SOCK: /tmp/ssh_agent.sock
       CURRENT_BRANCH: ${{ github.event.client_payload.branch }}
       GIT_LAB_COMMIT_SHA: ${{ github.event.client_payload.commit_sha }}
@@ -34,19 +28,6 @@ jobs:
       SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
       REPO_URL: ${{ secrets.REPO_URL }}
       ENCRYPT_PASSWORD: ${{ secrets.ENCRYPT_PASSWORD }}
-      DATABASE_DEFAULT_ENCRYPTION_KEY: ${{ secrets.DATABASE_DEFAULT_ENCRYPTION_KEY }}
-      OAUTH_CLIENT_ID_ANDROID: ${{ secrets.OAUTH_CLIENT_ID_ANDROID_STAGING }}
-      APP_METRICA_API_KEY: ${{ secrets.APP_METRICA_API_KEY_STAGING }}
-      FIREBASEAPPDISTRO_APP: ${{ secrets.FIREBASE_APP_ID_ANDROID }}
-      FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-      GIT_LAB_ACCESS_TOKEN: ${{ secrets.GIT_LAB_ACCESS_TOKEN }}
-      OAUTH_CLIENT_ID_IOS: ${{ secrets.OAUTH_CLIENT_ID_IOS_STAGING }}
-      AMPLITUDE_API_KEY: ${{ secrets.AMPLITUDE_API_KEY_STAGING }}
-      REVENUECAT_API_KEY_IOS: ${{ secrets.REVENUECAT_API_KEY_IOS }}
-      REVENUECAT_API_KEY_ANDROID: ${{ secrets.REVENUECAT_API_KEY_ANDROID }}
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      TIKTOK_APP_ID: ${{ secrets.TIKTOK_APP_ID }}
-      TIKTOK_ACCESS_TOKEN: ${{ secrets.TIKTOK_ACCESS_TOKEN }}
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
@@ -121,24 +102,14 @@ jobs:
           path: node_modules
           key: ${{ steps.yarn_cache_restore.outputs.cache-primary-key }}
 
-      - name: Set up JDK ${{ matrix.java }}
-        uses: actions/setup-java@v4
-        with:
-          java-version: ${{ matrix.java }}
-          distribution: 'zulu'
+      - name: TypeScript
+        run: yarn ts
 
-      - name: Install Ruby ${{ matrix.ruby }}
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: ${{ matrix.ruby }}
-          bundler-cache: true
+      - name: Eslint
+        run: yarn lint --quiet
 
-      - run: bundle install --jobs 4 --retry 3
-
-      - name: Run fastlane line "fastlane android distribute" with PROD ENV variables
-        run: bundle exec fastlane android distribute
-        env:
-          BETA_BUILD: true
+      - name: Unit tests
+        run: yarn test --ci
 
       - name: The job has cancelled
         if: ${{ cancelled() }}
