@@ -99,6 +99,9 @@ jobs:
       - name: Eslint
         run: yarn lint --quiet
 
+      - name: Check i18n
+        run: yarn check-i18n
+
       - name: Unit tests
         run: yarn test --ci
 
