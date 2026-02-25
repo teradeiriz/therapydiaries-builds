@@ -127,16 +127,6 @@ jobs:
           java-version: ${{ matrix.java }}
           distribution: 'zulu'
 
-      - name: Cache Gradle packages
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
-
       - name: Install Ruby ${{ matrix.ruby }}
         uses: ruby/setup-ruby@v1
         with:
@@ -145,10 +135,30 @@ jobs:
 
       - run: bundle install --jobs 4 --retry 3
 
+      - name: Restore Gradle cache
+        id: gradle-cache-restore
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
       - name: Run fastlane line "fastlane android distribute" with PROD ENV variables
         run: bundle exec fastlane android distribute
         env:
           BETA_BUILD: true
+
+      - name: Save Gradle cache
+        if: steps.gradle-cache-restore.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ steps.gradle-cache-restore.outputs.primary-key }}
 
       - name: The job has cancelled
         if: ${{ cancelled() }}
