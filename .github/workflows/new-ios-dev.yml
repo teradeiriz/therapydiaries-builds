@@ -129,12 +129,7 @@ jobs:
 
     - name: Install pods
       working-directory: ios
-      run: |
-        if grep -q '"react-native": "0.76.7"' ../package.json; then
-          RCT_NEW_ARCH_ENABLED=0 pod install
-        else
-          RCT_NEW_ARCH_ENABLED=1 pod install
-        fi
+      run: RCT_USE_RN_DEP=0 RCT_USE_PREBUILT_RNCORE=0 RCT_NEW_ARCH_ENABLED=1 pod install
 
 
     - name: Install Ruby ${{ matrix.ruby }}
