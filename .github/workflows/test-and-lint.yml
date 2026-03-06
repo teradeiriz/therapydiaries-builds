@@ -64,6 +64,10 @@ jobs:
       - name: Notify gitlab
         run: ./infrastructure/gitlab/status.sh "state=running&description=$GITHUB_RUN_ID"
 
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
       - name: Restore Yarn cache
         id: yarn_cache_restore
         uses: actions/cache/restore@v4
