@@ -52,10 +52,17 @@ jobs:
       env:
         GIT_LAB_ACCESS_TOKEN: ${{ secrets.GIT_LAB_ACCESS_TOKEN }}
 
+    - name: Check diff
+      id: can_run
+      if: github.event.client_payload.diff_check
+      run: node infrastructure/github/check-diff.js ${{ github.event.client_payload.target_branch }}
+
     - uses: ./.github/actions/install-dependencies
+      if: steps.can_run.outcome == 'skipped' || steps.can_run.outputs.ios_has_changes == 'true'
 
     - name: Pods cache
       uses: actions/cache@v4
+      if: steps.can_run.outcome == 'skipped' || steps.can_run.outputs.ios_has_changes == 'true'
       with:
         path: |
           ~/.cocoapods
@@ -64,17 +71,21 @@ jobs:
         restore-keys: ${{ runner.os }}-pods-
 
     - run: bundle install --jobs 4 --retry 3
+      if: steps.can_run.outcome == 'skipped' || steps.can_run.outputs.ios_has_changes == 'true'
 
     - name: Install pods
+      if: steps.can_run.outcome == 'skipped' || steps.can_run.outputs.ios_has_changes == 'true'
       run: yarn pod-install
 
     - name: iOS build cache
+      if: steps.can_run.outcome == 'skipped' || steps.can_run.outputs.ios_has_changes == 'true'
       uses: actions/cache@v4
       with:
         path: .local_derived_data
         key: ${{ runner.os }}-pods-derived-data-${{ hashFiles('ios/Podfile.lock') }}
 
     - name: Run fastlane line "fastlane ios distribute" with PROD ENV variables
+      if: steps.can_run.outcome == 'skipped' || steps.can_run.outputs.ios_has_changes == 'true'
       run: bundle exec fastlane ios distribute
       env:
         BETA_BUILD: true

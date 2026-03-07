@@ -52,15 +52,24 @@ jobs:
         env:
           GIT_LAB_ACCESS_TOKEN: ${{ secrets.GIT_LAB_ACCESS_TOKEN }}
 
+      - name: Check diff
+        id: can_run
+        if: github.event.client_payload.diff_check
+        run: node infrastructure/github/check-diff.js ${{ github.event.client_payload.target_branch }}
+
       - uses: ./.github/actions/android-keystores
+        if: steps.can_run.outcome == 'skipped' || steps.can_run.outputs.android_has_changes == 'true'
         with:
           encrypt-password: ${{ secrets.ENCRYPT_PASSWORD }}
 
       - uses: ./.github/actions/install-dependencies
+        if: steps.can_run.outcome == 'skipped' || steps.can_run.outputs.android_has_changes == 'true'
 
       - run: bundle install --jobs 4 --retry 3
+        if: steps.can_run.outcome == 'skipped' || steps.can_run.outputs.android_has_changes == 'true'
 
       - name: Restore Gradle cache
+        if: steps.can_run.outcome == 'skipped' || steps.can_run.outputs.android_has_changes == 'true'
         id: gradle-cache-restore
         uses: actions/cache/restore@v4
         with:
@@ -72,6 +81,7 @@ jobs:
             ${{ runner.os }}-gradle-
 
       - name: Run fastlane line "fastlane android distribute" with PROD ENV variables
+        if: steps.can_run.outcome == 'skipped' || steps.can_run.outputs.android_has_changes == 'true'
         run: bundle exec fastlane android distribute
         env:
           BETA_BUILD: true
