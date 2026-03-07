@@ -1,0 +1,24 @@
+name: 'Notify GitLab Status'
+description: 'Reports the final job status back to GitLab'
+inputs:
+  gitlab-token:
+    description: 'GIT_LAB_ACCESS_TOKEN'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Report status to GitLab
+      if: always()
+      shell: bash
+      run: |
+        set -x
+        STATE="${{ job.status }}"
+        if [ "$STATE" == "failure" ]; then
+          STATE="failed"
+        elif [ "$STATE" == "cancelled" ]; then
+          STATE="canceled"
+        fi
+        ./infrastructure/gitlab/status.sh "state=$STATE"
+      env:
+        GIT_LAB_ACCESS_TOKEN: ${{ inputs.gitlab-token }}
