@@ -15,97 +15,37 @@ jobs:
         os: [ ubuntu-24.04 ] # M1 not a really faster than x64
         ruby: [ '3.4.2']
         java: [ '21' ]
+        nodejs: [ '24' ]
     runs-on: ${{ matrix.os }}
 
     env:
-      SENTRY_PROPERTIES: ./android/sentry.properties
-      SSH_AUTH_SOCK: /tmp/ssh_agent.sock
-      USER_NAME: ${{ secrets.GITLAB_USER_NAME }}
-      USER_EMAIL: ${{ secrets.GITLAB_USER_EMAIL }}
-      SSH_KNOWN_HOST: ${{ secrets.SSH_KNOWN_HOST }}
-      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-      CURRENT_BRANCH: ${{ github.event.client_payload.branch }}
-      GIT_LAB_COMMIT_SHA: ${{ github.event.client_payload.commit_sha }}
-      GIT_LAB_PIPELINE_ID: ${{ github.event.client_payload.pipeline_id }}
-      REPO_URL: ${{ secrets.REPO_URL }}
-      ENCRYPT_PASSWORD: ${{ secrets.ENCRYPT_PASSWORD }}
-      DATABASE_DEFAULT_ENCRYPTION_KEY: ${{ secrets.DATABASE_DEFAULT_ENCRYPTION_KEY }}
-      OAUTH_CLIENT_ID_ANDROID: ${{ secrets.OAUTH_CLIENT_ID_ANDROID }}
-      APP_METRICA_API_KEY: ${{ secrets.APP_METRICA_API_KEY }}
-      BUMP_TYPE: ${{ github.event.client_payload.bump_type }}
-      APP_RELEASE_VERSION: ${{ github.event.client_payload.app_release_version }}
-      GIT_LAB_ACCESS_TOKEN: ${{ secrets.GIT_LAB_ACCESS_TOKEN }}
-      OAUTH_CLIENT_ID_IOS: ${{ secrets.OAUTH_CLIENT_ID_IOS_STAGING }}
-      AMPLITUDE_API_KEY: ${{ secrets.AMPLITUDE_API_KEY }}
-      APPSFLYER_API_KEY: ${{ secrets.APPSFLYER_API_KEY }}
-      REVENUECAT_API_KEY_IOS: ${{ secrets.REVENUECAT_API_KEY_IOS }}
-      REVENUECAT_API_KEY_ANDROID: ${{ secrets.REVENUECAT_API_KEY_ANDROID }}
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      TIKTOK_APP_ID: ${{ secrets.TIKTOK_APP_ID }}
-      TIKTOK_ACCESS_TOKEN: ${{ secrets.TIKTOK_ACCESS_TOKEN }}
+      ACTIONS_STEP_DEBUG: true
+      NODE_OPTIONS: --max_old_space_size=4096
 
     steps:
-      - name: Delete huge unnecessary tools folder
-        run: rm -rf /opt/hostedtoolcache
-
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4
-
-      - name: Check all required variables
-        run: sh ./scripts/common-check.sh && sh ./scripts/android-prod-check.sh
-
-      - name: Fix error 'ENOSPC - System limit for number of file watchers reached'
-        if: ${{ startsWith(matrix.os, 'ubuntu-') }}
-        run: echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
-
-      - name: Configure git users
-        run: |
-            git config --global user.name "$USER_NAME"
-            git config --global user.email "$USER_EMAIL"
-
-      - name: Setup SSH keys and known_hosts
-        run: |
-            mkdir -p ~/.ssh
-            echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-            chmod 600 ~/.ssh/id_rsa
-            ssh-keyscan $SSH_KNOWN_HOST >> ~/.ssh/known_hosts
-            ssh-agent -a $SSH_AUTH_SOCK > /dev/null
-            ssh-add ~/.ssh/id_rsa
-
-      - name: Get repository
-        run: |
-          rm -rf ./.git ./.github ./.gitignore ./*
-          ls -la ./
-          git clone "$REPO_URL" --branch="$CURRENT_BRANCH" --single ./
-          git log -1
-
-      - name: Set up JDK ${{ matrix.java }}
-        uses: actions/setup-java@v4
+      - uses: ./.github/actions/initial-setup
         with:
-          java-version: ${{ matrix.java }}
-          distribution: 'zulu'
+          java: ${{ matrix.java }}
+          ruby: ${{ matrix.ruby }}
+          nodejs: ${{ matrix.nodejs }}
 
-      - name: Install Ruby ${{ matrix.ruby }}
-        uses: ruby/setup-ruby@v1
+      - uses: ./.github/actions/clone-repo
         with:
-          ruby-version: ${{ matrix.ruby }}
-          bundler-cache: true
+          repo-url: ${{ secrets.REPO_URL }}
+          user-name: ${{ secrets.GITLAB_USER_NAME }}
+          user-email: ${{ secrets.GITLAB_USER_EMAIL }}
+          ssh-known-host: ${{ secrets.SSH_KNOWN_HOST }}
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          branch: ${{ github.event.client_payload.branch }}
+          depth: 1
 
-      - name: Install node_modules
-        shell: bash
-        run: |
-          # Retry 3 times before the steps actually fails
-          (echo "===== Install node_modules Attempt:  1 ====" && yarn install --frozen-lockfile) || \
-          (echo "===== Install node_modules Attempt:  2 ====" && yarn install --frozen-lockfile) || \
-          (echo "===== Install node_modules Attempt:  3 ====" && yarn install --frozen-lockfile) || \
-          (echo "===== Install node_modules Step Failed ====" && exit 1)
+      - uses: ./.github/actions/install-dependencies
+        with:
+          no-cache: 'true'
 
-      - name: Decrypt keystore and Google Credentials
-        run: |
-          gpg --quiet --batch --yes --decrypt --passphrase="$ENCRYPT_PASSWORD" \
-          --output ./android/keystores/release.keystore ./android/keystores/release.keystore.gpg
-          gpg --quiet --batch --yes --decrypt --passphrase="$ENCRYPT_PASSWORD" \
-          --output ./android/keystores/google-private-key.json ./android/keystores/google-private-key.json.gpg
+      - uses: ./.github/actions/android-keystores
+        with:
+          encrypt-password: ${{ secrets.ENCRYPT_PASSWORD }}
 
       - name: Clean before Fastlane
         run: |
@@ -116,3 +56,19 @@ jobs:
 
       - name: Run fastlane line "fastlane android deploy" with PROD ENV variables
         run: bundle exec fastlane android deploy
+        env:
+          # sentry
+          SENTRY_PROPERTIES: ./android/sentry.properties
+          # app env variables
+          AMPLITUDE_API_KEY: ${{ secrets.AMPLITUDE_API_KEY_STAGING }}
+          APP_METRICA_API_KEY: ${{ secrets.APP_METRICA_API_KEY_STAGING }}
+          DATABASE_DEFAULT_ENCRYPTION_KEY: ${{ secrets.DATABASE_DEFAULT_ENCRYPTION_KEY }}
+          OAUTH_CLIENT_ID_ANDROID: ${{ secrets.OAUTH_CLIENT_ID_ANDROID_STAGING }}
+          OAUTH_CLIENT_ID_IOS: ${{ secrets.OAUTH_CLIENT_ID_IOS_STAGING }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          REVENUECAT_API_KEY_ANDROID: ${{ secrets.REVENUECAT_API_KEY_ANDROID }}
+          REVENUECAT_API_KEY_IOS: ${{ secrets.REVENUECAT_API_KEY_IOS }}
+          TIKTOK_ACCESS_TOKEN: ${{ secrets.TIKTOK_ACCESS_TOKEN }}
+          TIKTOK_APP_ID: ${{ secrets.TIKTOK_APP_ID }}
+          # Fastlane env variables
+          BUMP_TYPE: ${{ github.event.client_payload.bump_type }}

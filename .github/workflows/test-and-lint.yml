@@ -14,88 +14,36 @@ jobs:
         # macos-26:     CPU: (3) arm64 Apple M1 (Virtual);            Memory: 89.83 MB / 7.00 GB
         # ubuntu-24.04: CPU: (4) x64 AMD EPYC 7763 64-Core Processor; Memory: 14.56 GB / 15.62 GB
         os: [ ubuntu-24.04 ] # macos-26 has when same performance as ubuntu-24.04 for this job
+        nodejs: [ '24' ]
 
     runs-on: ${{ matrix.os }}
     env:
+      ACTIONS_STEP_DEBUG: true
       NODE_OPTIONS: --max_old_space_size=4096
-      SSH_AUTH_SOCK: /tmp/ssh_agent.sock
-      CURRENT_BRANCH: ${{ github.event.client_payload.branch }}
+      # Required by `infrastructure/gitlab/status.sh`
       GIT_LAB_COMMIT_SHA: ${{ github.event.client_payload.commit_sha }}
       GIT_LAB_PIPELINE_ID: ${{ github.event.client_payload.pipeline_id }}
-      USER_NAME: ${{ secrets.GITLAB_USER_NAME }}
-      USER_EMAIL: ${{ secrets.GITLAB_USER_EMAIL }}
-      SSH_KNOWN_HOST: ${{ secrets.SSH_KNOWN_HOST }}
-      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-      REPO_URL: ${{ secrets.REPO_URL }}
-      ENCRYPT_PASSWORD: ${{ secrets.ENCRYPT_PASSWORD }}
-      GIT_LAB_ACCESS_TOKEN: ${{ secrets.GIT_LAB_ACCESS_TOKEN }}
 
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4
+      - uses: ./.github/actions/initial-setup
+        with:
+          nodejs: ${{ matrix.nodejs }}
 
-      # - run: npx envinfo
-
-      - name: Fix error 'ENOSPC - System limit for number of file watchers reached'
-        if: ${{ startsWith(matrix.os, 'ubuntu-') }}
-        run: echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf && sudo sysctl -p
-
-      - name: Configure git users
-        run: |
-          git config --global user.name "$USER_NAME"
-          git config --global user.email "$USER_EMAIL"
-
-      - name: Setup SSH keys and known_hosts
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan $SSH_KNOWN_HOST >> ~/.ssh/known_hosts
-          ssh-agent -a $SSH_AUTH_SOCK > /dev/null
-          ssh-add ~/.ssh/id_rsa
-
-      - name: Get repository
-        run: |
-          rm -rf ./.git ./.github ./.gitignore ./*
-          ls -la ./
-          git clone "$REPO_URL" --branch="$CURRENT_BRANCH" --single --depth=1 ./
-          git log -1
+      - uses: ./.github/actions/clone-repo
+        with:
+          repo-url: ${{ secrets.REPO_URL }}
+          user-name: ${{ secrets.GITLAB_USER_NAME }}
+          user-email: ${{ secrets.GITLAB_USER_EMAIL }}
+          ssh-known-host: ${{ secrets.SSH_KNOWN_HOST }}
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          branch: ${{ github.event.client_payload.branch }}
 
       - name: Notify gitlab
         run: ./infrastructure/gitlab/status.sh "state=running&description=$GITHUB_RUN_ID"
+        env:
+          GIT_LAB_ACCESS_TOKEN: ${{ secrets.GIT_LAB_ACCESS_TOKEN }}
 
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-
-      - name: Restore Yarn cache
-        id: yarn_cache_restore
-        uses: actions/cache/restore@v4
-        with:
-          path: node_modules
-          key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}-patches-${{ hashFiles('patches/*.patch') }}
-          restore-keys: ${{ runner.os }}-yarn-
-
-      - name: Install node_modules
-        if: steps.yarn_cache_restore.outputs.cache-hit != 'true'
-        shell: bash
-        run: |
-          # Retry 3 times before the steps actually fails
-          (echo "===== Install node_modules Attempt:  1 ====" && yarn install --frozen-lockfile) || \
-          (echo "===== Install node_modules Attempt:  2 ====" && yarn install --frozen-lockfile) || \
-          (echo "===== Install node_modules Attempt:  3 ====" && yarn install --frozen-lockfile) || \
-          (echo "===== Install node_modules Step Failed ====" && exit 1)
-
-
-      - run: yarn postinstall
-
-      - name: Save Yarn cache
-        id: yarn_cache_save
-        uses: actions/cache/save@v4
-        if: steps.yarn_cache_restore.outputs.cache-hit != 'true'
-        with:
-          path: node_modules
-          key: ${{ steps.yarn_cache_restore.outputs.cache-primary-key }}
+      - uses: ./.github/actions/install-dependencies
 
       - name: TypeScript
         run: yarn ts
@@ -109,13 +57,23 @@ jobs:
       - name: Unit tests
         run: yarn test --ci
 
+
+      #############################################################
+      # NOTIFY GITLAB ABOUT JOB RESULT
+      #############################################################
       - name: The job has cancelled
         if: ${{ cancelled() }}
         run: ./infrastructure/gitlab/status.sh "state=canceled"
+        env:
+          GIT_LAB_ACCESS_TOKEN: ${{ secrets.GIT_LAB_ACCESS_TOKEN }}
 
       - name: The job has failed
         if: ${{ failure() }}
         run: ./infrastructure/gitlab/status.sh "state=failed"
+        env:
+          GIT_LAB_ACCESS_TOKEN: ${{ secrets.GIT_LAB_ACCESS_TOKEN }}
 
       - name: The job has success
         run: ./infrastructure/gitlab/status.sh "state=success"
+        env:
+          GIT_LAB_ACCESS_TOKEN: ${{ secrets.GIT_LAB_ACCESS_TOKEN }}

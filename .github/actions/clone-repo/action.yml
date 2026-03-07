@@ -1,0 +1,56 @@
+name: Clone repo
+description: 'Clones a repository to the current directory with a specified depth.'
+inputs:
+  depth:
+    description: 'The depth of the git clone'
+    required: false
+    default: 100
+  repo-url:
+    description: 'The URL of the repository to clone'
+    required: true
+  branch:
+    description: 'The branch to clone (optional, defaults to the default branch of the repository)'
+    required: true
+  ssh-private-key:
+    description: 'The SSH private key to use for authentication'
+    required: true
+  ssh-known-host:
+    description: 'The SSH known host to add to the known_hosts file'
+    required: true
+  ssh-auth-sock:
+    description: "The SSH_AUTH_SOCK environment variable value to use for ssh-agent"
+    required: false
+    default: /tmp/ssh_agent.sock
+  user-name:
+    description: "The git user name to configure"
+    required: true
+  user-email:
+    description: "The git user email to configure"
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Configure git users
+      shell: bash
+      run: |
+        git config --global user.name "${{ inputs.user-name }}"
+        git config --global user.email "${{ inputs.user-email }}"
+
+    - name: Setup SSH keys and known_hosts
+      shell: bash
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ inputs.ssh-private-key }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan ${{ inputs.ssh-known-host }} >> ~/.ssh/known_hosts
+        ssh-agent -a ${{ inputs.ssh-auth-sock }} > /dev/null
+        ssh-add ~/.ssh/id_rsa
+
+    - name: Get repository
+      shell: bash
+      run: |
+        rm -rf ./.git ./.github ./.gitignore ./*
+        ls -la ./
+        git clone --depth=${{ inputs.depth }} "${{ inputs.repo-url }}" ./
+        git checkout "${{ inputs.branch }}"

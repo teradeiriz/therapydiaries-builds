@@ -1,0 +1,18 @@
+name: Clone repo
+description: 'Clones a repository to the current directory with a specified depth.'
+inputs:
+  encrypt-password:
+    description: 'Password for decrypting the keystore and Google credentials.'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Decrypt keystore and Google Credentials
+      shell: bash
+      run: |
+        gpg --quiet --batch --yes --decrypt --passphrase="${{ inputs.encrypt-password }}" \
+        --output ./android/keystores/release.keystore ./android/keystores/release.keystore.gpg
+        gpg --quiet --batch --yes --decrypt --passphrase="${{ inputs.encrypt-password }}" \
+        --output ./android/keystores/google-private-key.json ./android/keystores/google-private-key.json.gpg
+
