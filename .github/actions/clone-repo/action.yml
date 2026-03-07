@@ -1,10 +1,6 @@
 name: Clone repo
 description: 'Clones a repository to the current directory with a specified depth.'
 inputs:
-  depth:
-    description: 'The depth of the git clone'
-    required: false
-    default: 100
   repo-url:
     description: 'The URL of the repository to clone'
     required: true
@@ -56,5 +52,9 @@ runs:
         cp -R .github /tmp/github-backup
         rm -rf ./.git ./.github ./.gitignore ./*
         ls -la ./
-        git clone --depth=${{ inputs.depth }} --branch "${{ inputs.branch }}" "${{ inputs.repo-url }}" ./
+
+        git clone --branch develop --single-branch --depth 1 ${{ inputs.repo-url }} ./
+        git fetch --depth 1 origin "${{ inputs.branch }}"
+        git checkout -b "${{ inputs.branch }}" FETCH_HEAD
+        
         cp -R /tmp/github-backup .github
