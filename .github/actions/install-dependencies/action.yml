@@ -1,0 +1,46 @@
+name: Install dependencies
+description: 'Installs and caches Node.js dependencies using Yarn.'
+inputs:
+  lookup-only:
+    description: 'If true, only checks if cache entry exists and skips download. Default: false'
+    required: false
+    default: false
+  no-cache:
+    description: 'If true, skips both restore and save cache steps. Default: false'
+    required: false
+    default: false
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Restore node_modules from cache
+      if: ${{ inputs.no-cache != 'true' }}
+      uses: actions/cache/restore@v4
+      id: restore_node_modules
+      with:
+        key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}-patches-${{ hashFiles('patches/*.patch') }}
+        restore-keys: ${{ runner.os }}-yarn-
+        path: ${{ github.workspace }}/node_modules
+        lookup-only: ${{ inputs.lookup-only }}
+
+
+    - name: Install node_modules
+      if: steps.restore_node_modules.outputs.cache-hit != 'true' && inputs.no-cache != 'true'
+      shell: bash
+      run: |
+        # Retry 3 times before the steps actually fails
+        (echo "===== Install node_modules Attempt:  1 ====" && yarn install --frozen-lockfile) || \
+        (echo "===== Install node_modules Attempt:  2 ====" && yarn install --frozen-lockfile) || \
+        (echo "===== Install node_modules Attempt:  3 ====" && yarn install --frozen-lockfile) || \
+        (echo "===== Install node_modules Step Failed ====" && exit 1)
+
+    - name: Apply patches
+      shell: bash
+      run: yarn postinstall
+
+    - name: Save node_modules to cache
+      if: steps.restore_node_modules.outputs.cache-hit != 'true' && inputs.no-cache != 'true'
+      uses: actions/cache/save@v4
+      with:
+        key: ${{ steps.restore_node_modules.outputs.cache-primary-key }}
+        path: ${{ github.workspace }}/node_modules

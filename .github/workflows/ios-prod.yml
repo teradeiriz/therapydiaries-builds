@@ -14,52 +14,21 @@ jobs:
         os: [ macos-26 ]
         # ^^^ macos-26 Installed Software: https://github.com/actions/runner-images/blob/main/images/macos/macos-26-arm64-Readme.md
         ruby: [ '3.4.2' ]
+        nodejs: [ '24' ]
         xcode: [ '26.2' ]
         # ^^^ See all Xcode versions (for macos-26): https://github.com/actions/runner-images/blob/main/images/macos/macos-26-arm64-Readme.md#xcode
 
     runs-on: ${{ matrix.os }}
     env:
-      SENTRY_PROPERTIES: ${{ github.workspace }}/ios/sentry.properties
-      SENTRY_ALLOW_FAILURE: ${{ secrets.SENTRY_ALLOW_FAILURE }}
-      SSH_AUTH_SOCK: /tmp/ssh_agent.sock
-      CURRENT_BRANCH: ${{ github.event.client_payload.branch }}
-      GIT_LAB_COMMIT_SHA: ${{ github.event.client_payload.commit_sha }}
-      GIT_LAB_PIPELINE_ID: ${{ github.event.client_payload.pipeline_id }}
-      USER_NAME: ${{ secrets.GITLAB_USER_NAME }}
-      USER_EMAIL: ${{ secrets.GITLAB_USER_EMAIL }}
-      SSH_KNOWN_HOST: ${{ secrets.SSH_KNOWN_HOST }}
-      SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-      REPO_URL: ${{ secrets.REPO_URL }}
-      DATABASE_DEFAULT_ENCRYPTION_KEY: ${{ secrets.DATABASE_DEFAULT_ENCRYPTION_KEY }}
-      OAUTH_CLIENT_ID_ANDROID: ${{ secrets.OAUTH_CLIENT_ID_ANDROID }}
-      APP_METRICA_API_KEY: ${{ secrets.APP_METRICA_API_KEY }}
-      FASTLANE_USER: ${{ secrets.FASTLANE_USER }}
-      FASTLANE_PASSWORD: ${{ secrets.FASTLANE_PASSWORD }}
-      FASTLANE_SESSION: ${{ secrets.FASTLANE_SESSION }}
-      MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
-      MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-      FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD: ${{ secrets.FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD }}
-      BUMP_TYPE: ${{ github.event.client_payload.bump_type }}
-      APP_RELEASE_VERSION: ${{ github.event.client_payload.app_release_version }}
-      GIT_LAB_ACCESS_TOKEN: ${{ secrets.GIT_LAB_ACCESS_TOKEN }}
-      OAUTH_CLIENT_ID_IOS: ${{ secrets.OAUTH_CLIENT_ID_IOS }}
-      AMPLITUDE_API_KEY: ${{ secrets.AMPLITUDE_API_KEY }}
-      APPSFLYER_API_KEY: ${{ secrets.APPSFLYER_API_KEY }}
-      REVENUECAT_API_KEY_IOS: ${{ secrets.REVENUECAT_API_KEY_IOS }}
-      REVENUECAT_API_KEY_ANDROID: ${{ secrets.REVENUECAT_API_KEY_ANDROID }}
-      OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-      APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
-      APP_STORE_CONNECT_KEY_IDENTIFIER: ${{ secrets.APP_STORE_CONNECT_KEY_IDENTIFIER }}
-      APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
-      TIKTOK_APP_ID: ${{ secrets.TIKTOK_APP_ID }}
-      TIKTOK_ACCESS_TOKEN: ${{ secrets.TIKTOK_ACCESS_TOKEN }}
+      ACTIONS_STEP_DEBUG: true
+      NODE_OPTIONS: --max_old_space_size=4096
 
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v3
-
-      - name: Check all required variables
-        run: sh ./scripts/common-check.sh && sh ./scripts/ios-prod-check.sh
+      - uses: ./.github/actions/initial-setup
+        with:
+          ruby: ${{ matrix.ruby }}
+          nodejs: ${{ matrix.nodejs }}
+          xcode: ${{ matrix.xcode }}
 
       - name: Switch to Java 8 (hack for uploading build to Test Flight)
         run: |
@@ -68,52 +37,52 @@ jobs:
             rm -rf openjdk-11.0.1.jdk
             java -version
 
-      - name: Configure git users
-        run: |
-            git config --global user.name "$USER_NAME"
-            git config --global user.email "$USER_EMAIL"
-
-      - name: Setup SSH keys and known_hosts
-        run: |
-            mkdir -p ~/.ssh
-            echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-            chmod 600 ~/.ssh/id_rsa
-            ssh-keyscan $SSH_KNOWN_HOST >> ~/.ssh/known_hosts
-            ssh-agent -a $SSH_AUTH_SOCK > /dev/null
-            ssh-add ~/.ssh/id_rsa
-
-      - name: Get repository
-        run: |
-          rm -rf ./.git ./.github ./.gitignore ./*
-          ls -la ./
-          git clone "$REPO_URL" --branch="$CURRENT_BRANCH" --single ./
-          git log -1
-
-      - name: Select Xcode ${{ matrix.xcode }} Version
-        run: sudo xcode-select -switch /Applications/Xcode_${{ matrix.xcode }}.app
-
-      - name: Install Ruby ${{ matrix.ruby }}
-        uses: ruby/setup-ruby@v1
+      - uses: ./.github/actions/clone-repo
         with:
-          ruby-version: ${{ matrix.ruby }}
-          bundler-cache: false
+          repo-url: ${{ secrets.REPO_URL }}
+          user-name: ${{ secrets.GITLAB_USER_NAME }}
+          user-email: ${{ secrets.GITLAB_USER_EMAIL }}
+          ssh-known-host: ${{ secrets.SSH_KNOWN_HOST }}
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          branch: ${{ github.event.client_payload.branch }}
+          depth: 1
 
-      - name: Install node_modules
-        shell: bash
-        run: |
-          # Retry 3 times before the steps actually fails
-          (echo "===== Install node_modules Attempt:  1 ====" && yarn install --frozen-lockfile) || \
-          (echo "===== Install node_modules Attempt:  2 ====" && yarn install --frozen-lockfile) || \
-          (echo "===== Install node_modules Attempt:  3 ====" && yarn install --frozen-lockfile) || \
-          (echo "===== Install node_modules Step Failed ====" && exit 1)
+      - uses: ./.github/actions/install-dependencies
+        with:
+          no-cache: 'true'
+
+      - name: Install gem dependencies
+        run: bundle install --jobs 4 --retry 3
 
       - name: Install pods
         run: yarn pod-install
 
-      - name: Install gem dependencies
-        run: |
-          bundle config path vendor/bundle
-          bundle install --jobs 4 --retry 3
-
       - name: Run fastlane line "fastlane ios deploy" with PROD ENV variables
         run: bundle exec fastlane ios deploy
+        env:
+          # sentry
+          SENTRY_ALLOW_FAILURE: ${{ secrets.SENTRY_ALLOW_FAILURE }}
+          SENTRY_PROPERTIES: ${{ github.workspace }}/ios/sentry.properties
+          # app env variables
+          AMPLITUDE_API_KEY: ${{ secrets.AMPLITUDE_API_KEY }}
+          APPSFLYER_API_KEY: ${{ secrets.APPSFLYER_API_KEY }}
+          APP_METRICA_API_KEY: ${{ secrets.APP_METRICA_API_KEY }}
+          DATABASE_DEFAULT_ENCRYPTION_KEY: ${{ secrets.DATABASE_DEFAULT_ENCRYPTION_KEY }}
+          OAUTH_CLIENT_ID_ANDROID: ${{ secrets.OAUTH_CLIENT_ID_ANDROID }}
+          OAUTH_CLIENT_ID_IOS: ${{ secrets.OAUTH_CLIENT_ID_IOS }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          REVENUECAT_API_KEY_ANDROID: ${{ secrets.REVENUECAT_API_KEY_ANDROID }}
+          REVENUECAT_API_KEY_IOS: ${{ secrets.REVENUECAT_API_KEY_IOS }}
+          TIKTOK_ACCESS_TOKEN: ${{ secrets.TIKTOK_ACCESS_TOKEN }}
+          TIKTOK_APP_ID: ${{ secrets.TIKTOK_APP_ID }}
+          # Fastlane env variables
+          APP_STORE_CONNECT_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          APP_STORE_CONNECT_KEY_IDENTIFIER: ${{ secrets.APP_STORE_CONNECT_KEY_IDENTIFIER }}
+          APP_STORE_CONNECT_PRIVATE_KEY: ${{ secrets.APP_STORE_CONNECT_PRIVATE_KEY }}
+          BUMP_TYPE: ${{ github.event.client_payload.bump_type }}
+          FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD: ${{ secrets.FASTLANE_APPLE_APPLICATION_SPECIFIC_PASSWORD }}
+          FASTLANE_PASSWORD: ${{ secrets.FASTLANE_PASSWORD }}
+          FASTLANE_SESSION: ${{ secrets.FASTLANE_SESSION }}
+          FASTLANE_USER: ${{ secrets.FASTLANE_USER }}
+          MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
+          MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
