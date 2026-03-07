@@ -18,7 +18,6 @@ jobs:
 
     runs-on: ${{ matrix.os }}
     env:
-      ACTIONS_STEP_DEBUG: true
       NODE_OPTIONS: --max_old_space_size=4096
       # Required by `infrastructure/gitlab/status.sh`
       GIT_LAB_COMMIT_SHA: ${{ github.event.client_payload.commit_sha }}

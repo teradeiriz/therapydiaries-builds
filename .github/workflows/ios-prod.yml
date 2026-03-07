@@ -14,13 +14,12 @@ jobs:
         os: [ macos-26 ]
         # ^^^ macos-26 Installed Software: https://github.com/actions/runner-images/blob/main/images/macos/macos-26-arm64-Readme.md
         ruby: [ '3.4.2' ]
-        nodejs: [ '24' ]
+        # nodejs: [ '24' ]
         xcode: [ '26.2' ]
         # ^^^ See all Xcode versions (for macos-26): https://github.com/actions/runner-images/blob/main/images/macos/macos-26-arm64-Readme.md#xcode
 
     runs-on: ${{ matrix.os }}
     env:
-      ACTIONS_STEP_DEBUG: true
       NODE_OPTIONS: --max_old_space_size=4096
 
     steps:
