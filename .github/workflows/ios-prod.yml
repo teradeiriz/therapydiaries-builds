@@ -6,22 +6,17 @@ on:
   repository_dispatch:
     types: ['deploy-ios-to-test-flight']
 
+env:
+  RUBY_VERSION: '3.4.2'
+  NODE_VERSION: '24'
+  JAVA_VERSION: '21'
+  XCODE_VERSION: '26.2'
+  NODE_OPTIONS: --max_old_space_size=4096
+
 jobs:
   deploy-ios-to-test-flight:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ macos-26 ]
-        # ^^^ macos-26 Installed Software: https://github.com/actions/runner-images/blob/main/images/macos/macos-26-arm64-Readme.md
-        ruby: [ '3.4.2' ]
-        # nodejs: [ '24' ]
-        xcode: [ '26.2' ]
-        # ^^^ See all Xcode versions (for macos-26): https://github.com/actions/runner-images/blob/main/images/macos/macos-26-arm64-Readme.md#xcode
-
-    runs-on: ${{ matrix.os }}
-    env:
-      NODE_OPTIONS: --max_old_space_size=4096
-
+    name: Deploy iOS App to Test Flight
+    runs-on: macos-26
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4
@@ -30,9 +25,8 @@ jobs:
 
       - uses: ./.github/actions/initial-setup
         with:
-          ruby: ${{ matrix.ruby }}
-          nodejs: ${{ matrix.nodejs }}
-          xcode: ${{ matrix.xcode }}
+          ruby: ${{ env.RUBY_VERSION }}
+          xcode: ${{ env.XCODE_VERSION }}
 
       - name: Switch to Java 8 (hack for uploading build to Test Flight)
         run: |
@@ -49,7 +43,6 @@ jobs:
           ssh-known-host: ${{ secrets.SSH_KNOWN_HOST }}
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
           branch: ${{ github.event.client_payload.branch }}
-          depth: 1
 
       - uses: ./.github/actions/install-dependencies
         with:

@@ -6,21 +6,17 @@ on:
   repository_dispatch:
     types: ['deploy-android-to-play-store']
 
+env:
+  RUBY_VERSION: '3.4.2'
+  NODE_VERSION: '24'
+  JAVA_VERSION: '21'
+  XCODE_VERSION: '26.2'
+  NODE_OPTIONS: --max_old_space_size=4096
+
 jobs:
   deploy-android-to-play-store:
-    strategy:
-      matrix:
-        # macos-14:     CPU: (3) arm64 Apple M1 (Virtual);            Memory: 89.83 MB / 7.00 GB
-        # ubuntu-24.04: CPU: (4) x64 AMD EPYC 7763 64-Core Processor; Memory: 14.56 GB / 15.62 GB
-        os: [ ubuntu-24.04 ] # M1 not a really faster than x64
-        ruby: [ '3.4.2']
-        java: [ '21' ]
-        # nodejs: [ '24' ]
-    runs-on: ${{ matrix.os }}
-
-    env:
-      NODE_OPTIONS: --max_old_space_size=4096
-
+    name: Deploy Android App to Play Store
+    runs-on: ubuntu-24.04
     steps:
       - name: Delete huge unnecessary tools folder
         run: rm -rf /opt/hostedtoolcache
@@ -32,9 +28,8 @@ jobs:
 
       - uses: ./.github/actions/initial-setup
         with:
-          java: ${{ matrix.java }}
-          ruby: ${{ matrix.ruby }}
-          nodejs: ${{ matrix.nodejs }}
+          java: ${{ env.JAVA_VERSION }}
+          ruby: ${{ env.RUBY_VERSION }}
 
       - uses: ./.github/actions/clone-repo
         with:
@@ -44,7 +39,6 @@ jobs:
           ssh-known-host: ${{ secrets.SSH_KNOWN_HOST }}
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
           branch: ${{ github.event.client_payload.branch }}
-          depth: 1
 
       - uses: ./.github/actions/install-dependencies
         with:

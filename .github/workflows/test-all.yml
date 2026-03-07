@@ -4,8 +4,23 @@ on:
   repository_dispatch:
     types: ["test-all"]
 
+env:
+  RUBY_VERSION: '3.4.2'
+  NODE_VERSION: '24'
+  JAVA_VERSION: '21'
+  XCODE_VERSION: '26.2'
+  # ^^^ See all Xcode versions (for macos-26): https://github.com/actions/runner-images/blob/main/images/macos/macos-26-arm64-Readme.md#xcode
+  NODE_OPTIONS: --max_old_space_size=4096
+  # Required by `infrastructure/gitlab/status.sh`
+  GIT_LAB_COMMIT_SHA: ${{ github.event.client_payload.commit_sha }}
+  GIT_LAB_PIPELINE_ID: ${{ github.event.client_payload.pipeline_id }}
+
+# macos-26:     CPU: (3) arm64 Apple M1 (Virtual);            Memory: 89.83 MB / 7.00 GB
+# ubuntu-24.04: CPU: (4) x64 AMD EPYC 7763 64-Core Processor; Memory: 14.56 GB / 15.62 GB
+
 jobs:
   check_code_changes:
+    name: "🔍 Check Code Changes"
     runs-on: ubuntu-24.04
     outputs:
       run_code_quality: ${{ steps.can_run.outcome == 'skipped' || steps.can_run.outputs.ts_has_changes == 'true' || steps.can_run.outputs.lint_has_changes == 'true' || steps.can_run.outputs.i18n_has_changes == 'true' || steps.can_run.outputs.test_has_changes == 'true' }}
@@ -33,32 +48,18 @@ jobs:
         run: node infrastructure/github/check-diff.js ${{ github.event.client_payload.target_branch }}
 
   code-quality:
+    name: "🧪 Code Quality"
     needs: check_code_changes
     if: needs.check_code_changes.outputs.run_code_quality == 'true'
-    strategy:
-      fail-fast: false
-      matrix:
-        # macos-26:     CPU: (3) arm64 Apple M1 (Virtual);            Memory: 89.83 MB / 7.00 GB
-        # ubuntu-24.04: CPU: (4) x64 AMD EPYC 7763 64-Core Processor; Memory: 14.56 GB / 15.62 GB
-        os: [ ubuntu-24.04 ] # macos-26 has when same performance as ubuntu-24.04 for this job
-        nodejs: [ '24' ]
-
-    runs-on: ${{ matrix.os }}
-    env:
-      NODE_OPTIONS: --max_old_space_size=4096
-      # Required by `infrastructure/gitlab/status.sh`
-      GIT_LAB_COMMIT_SHA: ${{ github.event.client_payload.commit_sha }}
-      GIT_LAB_PIPELINE_ID: ${{ github.event.client_payload.pipeline_id }}
-
+    runs-on: ubuntu-24.04 # macos-26 has when same performance as ubuntu-24.04 for this job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
       - uses: ./.github/actions/initial-setup
         with:
-          nodejs: ${{ matrix.nodejs }}
+          nodejs: ${{ env.NODE_VERSION }}
 
       - uses: ./.github/actions/clone-repo
         with:
@@ -92,59 +93,26 @@ jobs:
         if: needs.check_code_changes.outputs.run_test == 'true'
         run: yarn test --ci
 
-
-      #############################################################
-      # NOTIFY GITLAB ABOUT JOB RESULT
-      #############################################################
-      - name: The job has cancelled
-        if: ${{ cancelled() }}
-        run: ./infrastructure/gitlab/status.sh "state=canceled"
-        env:
-          GIT_LAB_ACCESS_TOKEN: ${{ secrets.GIT_LAB_ACCESS_TOKEN }}
-
-      - name: The job has failed
-        if: ${{ failure() }}
-        run: ./infrastructure/gitlab/status.sh "state=failed"
-        env:
-          GIT_LAB_ACCESS_TOKEN: ${{ secrets.GIT_LAB_ACCESS_TOKEN }}
-
-      - name: The job has success
-        run: ./infrastructure/gitlab/status.sh "state=success"
-        env:
-          GIT_LAB_ACCESS_TOKEN: ${{ secrets.GIT_LAB_ACCESS_TOKEN }}
+      - uses: ./.github/actions/notify-gitlab
+        if: always()
+        with:
+          gitlab-token: ${{ secrets.GIT_LAB_ACCESS_TOKEN }}
 
   distribute-ipa:
+    name: "🍎 iOS Build & Distribute"
     needs: check_code_changes
     if: needs.check_code_changes.outputs.run_ios_build == 'true'
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ macos-26 ]
-        # ^^^ macos-26 Installed Software: https://github.com/actions/runner-images/blob/main/images/macos/macos-26-arm64-Readme.md
-        ruby: [ '3.4.2' ]
-        # nodejs: [ '24' ]
-        xcode: [ '26.2' ]
-        # ^^^ See all Xcode versions (for macos-26): https://github.com/actions/runner-images/blob/main/images/macos/macos-26-arm64-Readme.md#xcode
-
-    runs-on: ${{ matrix.os }}
-
-    env:
-      NODE_OPTIONS: --max_old_space_size=4096
-      # Required by `infrastructure/gitlab/status.sh`
-      GIT_LAB_COMMIT_SHA: ${{ github.event.client_payload.commit_sha }}
-      GIT_LAB_PIPELINE_ID: ${{ github.event.client_payload.pipeline_id }}
-
+    runs-on: macos-26 # macos-26 Installed Software: https://github.com/actions/runner-images/blob/main/images/macos/macos-26-arm64-Readme.md
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
       - uses: ./.github/actions/initial-setup
         with:
-          ruby: ${{ matrix.ruby }}
-          nodejs: ${{ matrix.nodejs }}
-          xcode: ${{ matrix.xcode }}
+          ruby: ${{ env.RUBY_VERSION }}
+          nodejs: ${{ env.NODE_VERSION }}
+          xcode: ${{ env.XCODE_VERSION }}
 
       - uses: ./.github/actions/clone-repo
         with:
@@ -214,60 +182,25 @@ jobs:
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
           СUSTOM_BUILD_NUMBER: ${{ github.run_number }}
 
-
-        #############################################################
-        # NOTIFY GITLAB ABOUT JOB RESULT
-        #############################################################
-
-      - name: The job has cancelled
-        if: ${{ cancelled() }}
-        run: ./infrastructure/gitlab/status.sh "state=canceled"
-        env:
-          GIT_LAB_ACCESS_TOKEN: ${{ secrets.GIT_LAB_ACCESS_TOKEN }}
-
-      - name: The job has failed
-        if: ${{ failure() }}
-        run: ./infrastructure/gitlab/status.sh "state=failed"
-        env:
-          GIT_LAB_ACCESS_TOKEN: ${{ secrets.GIT_LAB_ACCESS_TOKEN }}
-
-
-      - name: The job has success
-        run: ./infrastructure/gitlab/status.sh "state=success"
-        env:
-          GIT_LAB_ACCESS_TOKEN: ${{ secrets.GIT_LAB_ACCESS_TOKEN }}
+      - uses: ./.github/actions/notify-gitlab
+        if: always()
+        with:
+          gitlab-token: ${{ secrets.GIT_LAB_ACCESS_TOKEN }}
 
   distribute-apk:
+    name: "🤖 Android Build & Distribute"
     needs: check_code_changes
     if: needs.check_code_changes.outputs.run_android_build == 'true'
-    strategy:
-      fail-fast: false
-      matrix:
-        # macos-26:     CPU: (3) arm64 Apple M1 (Virtual);            Memory: 89.83 MB / 7.00 GB
-        # ubuntu-24.04: CPU: (4) x64 AMD EPYC 7763 64-Core Processor; Memory: 14.56 GB / 15.62 GB
-        os: [ ubuntu-24.04 ] # M1 not a really faster than x64
-        ruby: [ '3.4.2' ]
-        java: [ '21' ]
-        # nodejs: [ '24' ]
-
-    runs-on: ${{ matrix.os }}
-    env:
-      NODE_OPTIONS: --max_old_space_size=4096
-      # Required by `infrastructure/gitlab/status.sh`
-      GIT_LAB_COMMIT_SHA: ${{ github.event.client_payload.commit_sha }}
-      GIT_LAB_PIPELINE_ID: ${{ github.event.client_payload.pipeline_id }}
-
+    runs-on: ubuntu-24.04 # M1 not a really faster than x64
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
       - uses: ./.github/actions/initial-setup
         with:
-          java: ${{ matrix.java }}
-          ruby: ${{ matrix.ruby }}
-          nodejs: ${{ matrix.nodejs }}
+          ruby: ${{ env.RUBY_VERSION }}
+          java: ${{ env.JAVA_VERSION }}
 
       - uses: ./.github/actions/clone-repo
         with:
@@ -339,24 +272,7 @@ jobs:
             ~/.gradle/wrapper
           key: ${{ steps.gradle-cache-restore.outputs.primary-key }}
 
-
-      #############################################################
-      # NOTIFY GITLAB ABOUT JOB RESULT
-      #############################################################
-
-      - name: The job has cancelled
-        if: ${{ cancelled() }}
-        run: ./infrastructure/gitlab/status.sh "state=canceled"
-        env:
-          GIT_LAB_ACCESS_TOKEN: ${{ secrets.GIT_LAB_ACCESS_TOKEN }}
-
-      - name: The job has failed
-        if: ${{ failure() }}
-        run: ./infrastructure/gitlab/status.sh "state=failed"
-        env:
-          GIT_LAB_ACCESS_TOKEN: ${{ secrets.GIT_LAB_ACCESS_TOKEN }}
-
-      - name: The job has success
-        run: ./infrastructure/gitlab/status.sh "state=success"
-        env:
-          GIT_LAB_ACCESS_TOKEN: ${{ secrets.GIT_LAB_ACCESS_TOKEN }}
+      - uses: ./.github/actions/notify-gitlab
+        if: always()
+        with:
+          gitlab-token: ${{ secrets.GIT_LAB_ACCESS_TOKEN }}
