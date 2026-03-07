@@ -4,7 +4,7 @@ name: new Distribute IPA to Firebase App Distribution
 # events but only for the master branch
 on:
   repository_dispatch:
-    types: ['distribute-ipa-no-ci']
+    types: ['distribute-ipa-new']
 
 jobs:
   distribute-ipa:
@@ -50,6 +50,8 @@ jobs:
       REVENUECAT_API_KEY_IOS: ${{ secrets.REVENUECAT_API_KEY_IOS }}
       REVENUECAT_API_KEY_ANDROID: ${{ secrets.REVENUECAT_API_KEY_ANDROID }}
       OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      TIKTOK_APP_ID: ${{ secrets.TIKTOK_APP_ID }}
+      TIKTOK_ACCESS_TOKEN: ${{ secrets.TIKTOK_ACCESS_TOKEN }}
 
     steps:
     # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
@@ -80,6 +82,9 @@ jobs:
         ls -la ./
         git clone "$REPO_URL" --branch="$CURRENT_BRANCH" --single --depth=1 ./
         git log -1
+
+    - name: Notify gitlab
+      run: ./infrastructure/gitlab/status.sh "state=running&description=$GITHUB_RUN_ID"
 
     - name: Select Xcode ${{ matrix.xcode }} Version
       run: sudo xcode-select -switch /Applications/Xcode_${{ matrix.xcode }}.app
@@ -122,8 +127,8 @@ jobs:
         key: ${{ runner.os }}-pods-${{ hashFiles('ios/Podfile.lock') }}
         restore-keys: ${{ runner.os }}-pods-
 
-    - run: RCT_NEW_ARCH_ENABLED=1 pod install
-      working-directory: ios
+    - name: Install pods
+      run: yarn pod-install
 
 
     - name: Install Ruby ${{ matrix.ruby }}
@@ -146,3 +151,14 @@ jobs:
       run: bundle exec fastlane ios distribute
       env:
         BETA_BUILD: true
+
+    - name: The job has cancelled
+      if: ${{ cancelled() }}
+      run: ./infrastructure/gitlab/status.sh "state=canceled"
+
+    - name: The job has failed
+      if: ${{ failure() }}
+      run: ./infrastructure/gitlab/status.sh "state=failed"
+
+    - name: The job has success
+      run: ./infrastructure/gitlab/status.sh "state=success"
