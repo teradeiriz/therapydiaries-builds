@@ -56,6 +56,5 @@ runs:
         cp -R .github /tmp/github-backup
         rm -rf ./.git ./.github ./.gitignore ./*
         ls -la ./
-        git clone --depth=${{ inputs.depth }} "${{ inputs.repo-url }}" ./
-        git checkout "${{ inputs.branch }}"
+        git clone --depth=${{ inputs.depth }} --branch "${{ inputs.branch }}" "${{ inputs.repo-url }}" ./
         cp -R /tmp/github-backup .github
