@@ -23,6 +23,11 @@ jobs:
       NODE_OPTIONS: --max_old_space_size=4096
 
     steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
       - uses: ./.github/actions/initial-setup
         with:
           java: ${{ matrix.java }}
