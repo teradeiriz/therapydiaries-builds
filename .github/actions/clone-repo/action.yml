@@ -37,19 +37,22 @@ runs:
         git config --global user.name "${{ inputs.user-name }}"
         git config --global user.email "${{ inputs.user-email }}"
 
-    - name: Setup SSH keys and clone repository
+    - name: Set up SSH keys for authentication
       shell: bash
       run: |
-
-        # Set up SSH keys for authentication
+        set -x
         mkdir -p ~/.ssh
         echo "${{ inputs.ssh-private-key }}" > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
         ssh-keyscan ${{ inputs.ssh-known-host }} >> ~/.ssh/known_hosts
         ssh-agent -a ${{ inputs.ssh-auth-sock }} > /dev/null
-        ssh-add ~/.ssh/id_rsa
+        echo "SSH_AUTH_SOCK=${{ inputs.ssh-auth-sock }}" >> $GITHUB_ENV
+        SSH_AUTH_SOCK=${{ inputs.ssh-auth-sock }} ssh-add ~/.ssh/id_rsa
 
-        # Backup .github directory, clone the repository, and restore .github directory
+    - name: Backup .github directory, clone the repository, and restore .github directory
+      shell: bash
+      run: |
+        set -x
         cp -R .github /tmp/github-backup
         rm -rf ./.git ./.github ./.gitignore ./*
         ls -la ./
