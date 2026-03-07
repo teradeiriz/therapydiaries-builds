@@ -109,7 +109,7 @@ jobs:
 
 
       - name: Save Gradle cache
-        if: steps.gradle-cache-restore.outputs.cache-hit != 'true'
+        if: (steps.can_run.outcome == 'skipped' || steps.can_run.outputs.android_has_changes == 'true') && steps.gradle-cache-restore.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
           path: |
