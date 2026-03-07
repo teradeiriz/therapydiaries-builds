@@ -27,6 +27,11 @@ jobs:
       GIT_LAB_PIPELINE_ID: ${{ github.event.client_payload.pipeline_id }}
 
     steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
       - uses: ./.github/actions/initial-setup
         with:
           java: ${{ matrix.java }}
