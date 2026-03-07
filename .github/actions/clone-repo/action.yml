@@ -55,6 +55,6 @@ runs:
 
         git clone --branch develop --single-branch --depth 1 ${{ inputs.repo-url }} ./
         git fetch --depth 1 origin "${{ inputs.branch }}"
-        git checkout -b "${{ inputs.branch }}" FETCH_HEAD
-        
+        git checkout -b "${{ inputs.branch }}" FETCH_HEAD || true
+
         cp -R /tmp/github-backup .github
