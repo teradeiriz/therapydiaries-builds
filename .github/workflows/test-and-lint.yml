@@ -47,18 +47,28 @@ jobs:
         env:
           GIT_LAB_ACCESS_TOKEN: ${{ secrets.GIT_LAB_ACCESS_TOKEN }}
 
+      - name: Check diff
+        id: can_run
+        if: github.event.client_payload.diff_check
+        run: node infrastructure/github/check-diff.js ${{ github.event.client_payload.target_branch }}
+
       - uses: ./.github/actions/install-dependencies
+        if: steps.can_run.outcome == 'skipped' || steps.can_run.outputs.ts_has_changes == 'true' || steps.can_run.outputs.lint_has_changes == 'true' || steps.can_run.outputs.i18n_has_changes == 'true' || steps.can_run.outputs.test_has_changes == 'true'
 
       - name: TypeScript
+        if: steps.can_run.outcome == 'skipped' || steps.can_run.outputs.ts_has_changes == 'true'
         run: yarn ts
 
       - name: Eslint
+        if: steps.can_run.outcome == 'skipped' || steps.can_run.outputs.lint_has_changes == 'true'
         run: yarn lint --quiet
 
       - name: Check i18n
+        if: steps.can_run.outcome == 'skipped' || steps.can_run.outputs.i18n_has_changes == 'true'
         run: yarn check-i18n
 
       - name: Unit tests
+        if: steps.can_run.outcome == 'skipped' || steps.can_run.outputs.test_has_changes == 'true'
         run: yarn test --ci
 
 
