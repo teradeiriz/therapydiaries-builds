@@ -6,8 +6,7 @@ on:
 
 jobs:
   check_code_changes:
-    runs-on: ubuntu-latest
-    if: github.repository == 'facebook/react-native'
+    runs-on: ubuntu-24.04
     outputs:
       run_code_quality: ${{ steps.can_run.outcome == 'skipped' || steps.can_run.outputs.ts_has_changes == 'true' || steps.can_run.outputs.lint_has_changes == 'true' || steps.can_run.outputs.i18n_has_changes == 'true' || steps.can_run.outputs.test_has_changes == 'true' }}
       run_ts: ${{ steps.can_run.outcome == 'skipped' || steps.can_run.outputs.ts_has_changes == 'true' }}
@@ -28,9 +27,9 @@ jobs:
           ssh-known-host: ${{ secrets.SSH_KNOWN_HOST }}
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
           branch: ${{ github.event.client_payload.branch }}
-      - name: Check for code changes (exclusion & inclusion patterns))
+      - name: Check for code changes (exclusion & inclusion patterns)
         id: can_run
-        if: github.event.client_payload.diff_check
+        if: github.event.client_payload.diff_check == 'true'
         run: node infrastructure/github/check-diff.js ${{ github.event.client_payload.target_branch }}
 
   code-quality:
