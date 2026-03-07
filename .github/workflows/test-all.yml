@@ -44,7 +44,7 @@ jobs:
           branch: ${{ github.event.client_payload.branch }}
       - name: Check for code changes (exclusion & inclusion patterns)
         id: can_run
-        if: github.event.client_payload.diff_check
+        if: github.event.client_payload.diff_check && github.event.client_payload.target_branch # target_branch is empty for merged PRs to default branch (so there is nothing to compare with)
         run: node infrastructure/github/check-diff.js ${{ github.event.client_payload.target_branch }}
 
   code-quality:
