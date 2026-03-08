@@ -176,7 +176,7 @@ jobs:
           FASTLANE_PASSWORD: ${{ secrets.FASTLANE_PASSWORD }}
           FASTLANE_SESSION: ${{ secrets.FASTLANE_SESSION }}
           FASTLANE_USER: ${{ secrets.FASTLANE_USER }}
-          FIREBASEAPPDISTRO_APP: ${{ secrets.FIREBASE_APP_ID_ANDROID }}
+          FIREBASEAPPDISTRO_APP: ${{ secrets.FIREBASE_APP_ID_IOS }}
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
           MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
@@ -270,7 +270,7 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ steps.gradle-cache-restore.outputs.primary-key }}
+          key: ${{ steps.cache-primes-restore.outputs.cache-primary-key }}
 
       - uses: ./.github/actions/notify-gitlab
         if: always()
