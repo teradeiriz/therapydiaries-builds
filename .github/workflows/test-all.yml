@@ -180,7 +180,7 @@ jobs:
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
           MATCH_GIT_BASIC_AUTHORIZATION: ${{ secrets.MATCH_GIT_BASIC_AUTHORIZATION }}
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
-          СUSTOM_BUILD_NUMBER: ${{ github.run_number }}
+          CUSTOM_BUILD_NUMBER: ${{ github.run_number }}
 
       - uses: ./.github/actions/notify-gitlab
         if: always()
