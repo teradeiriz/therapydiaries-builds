@@ -270,7 +270,7 @@ jobs:
           path: |
             ~/.gradle/caches
             ~/.gradle/wrapper
-          key: ${{ steps.cache-primes-restore.outputs.cache-primary-key }}
+          key: ${{ steps.gradle-cache-restore.outputs.cache-primary-key }}
 
       - uses: ./.github/actions/notify-gitlab
         if: always()
