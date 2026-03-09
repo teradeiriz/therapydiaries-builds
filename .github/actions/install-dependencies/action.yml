@@ -25,7 +25,7 @@ runs:
 
 
     - name: Install node_modules
-      if: steps.restore_node_modules.outputs.cache-hit != 'true' && inputs.no-cache != 'true'
+      if: steps.restore_node_modules.outputs.cache-hit != 'true' || inputs.no-cache == 'true'
       shell: bash
       run: |
         # Retry 3 times before the steps actually fails
