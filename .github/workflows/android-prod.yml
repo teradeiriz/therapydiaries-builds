@@ -18,8 +18,8 @@ jobs:
     name: Deploy Android App to Play Store
     runs-on: ubuntu-24.04
     steps:
-      - name: Delete huge unnecessary tools folder
-        run: rm -rf /opt/hostedtoolcache
+#      - name: Delete huge unnecessary tools folder
+#        run: rm -rf /opt/hostedtoolcache
 
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4
