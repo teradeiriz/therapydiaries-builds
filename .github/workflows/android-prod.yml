@@ -18,10 +18,6 @@ jobs:
     name: Deploy Android App to Play Store
     runs-on: ubuntu-24.04
     steps:
-#      - name: Delete huge unnecessary tools folder
-#        run: rm -rf /opt/hostedtoolcache
-
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
@@ -30,13 +26,6 @@ jobs:
         with:
           java: ${{ env.JAVA_VERSION }}
           ruby: ${{ env.RUBY_VERSION }}
-          no-ruby-cache: 'true'
-
-      - name: Debug Ruby Version
-        run: |
-          ruby -v
-          which ruby
-          bundle -v
 
       - uses: ./.github/actions/clone-repo
         with:
@@ -61,6 +50,9 @@ jobs:
           rm -rf android/.gradle
           rm -rf ~/.gradle/caches
           df -h
+
+      - name: Install gem dependencies
+        run: bundle install --jobs 4 --retry 3
 
       - name: Run fastlane line "fastlane android deploy" with PROD ENV variables
         run: bundle exec fastlane android deploy
