@@ -30,6 +30,13 @@ jobs:
         with:
           java: ${{ env.JAVA_VERSION }}
           ruby: ${{ env.RUBY_VERSION }}
+          no-ruby-cache: 'true'
+
+      - name: Debug Ruby Version
+        run: |
+          ruby -v
+          which ruby
+          bundle -v
 
       - uses: ./.github/actions/clone-repo
         with:

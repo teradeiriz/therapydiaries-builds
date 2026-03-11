@@ -13,6 +13,10 @@ inputs:
   xcode:
     description: 'Xcode version to select (only for macOS runners)'
     required: false
+  no-ruby-cache:
+    description: 'Whether to disable Ruby bundler cache (useful for Android builds to save disk space)'
+    required: false
+    default: 'false'
 
 runs:
   using: 'composite'
@@ -40,7 +44,7 @@ runs:
       if: inputs.ruby != ''
       with:
         ruby-version: ${{ inputs.ruby }}
-        bundler-cache: true
+        bundler-cache: ${{ inputs.no-ruby-cache != 'true' }}
 
     - name: Select Xcode ${{ inputs.xcode }} Version
       shell: bash
