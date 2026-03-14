@@ -57,18 +57,28 @@ jobs:
       - name: Run fastlane line "fastlane android deploy" with PROD ENV variables
         run: bundle exec fastlane android deploy
         env:
-          # sentry
           SENTRY_PROPERTIES: ./android/sentry.properties
-          # app env variables
-          AMPLITUDE_API_KEY: ${{ secrets.AMPLITUDE_API_KEY_STAGING }}
-          APP_METRICA_API_KEY: ${{ secrets.APP_METRICA_API_KEY_STAGING }}
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+          USER_NAME: ${{ secrets.GITLAB_USER_NAME }}
+          USER_EMAIL: ${{ secrets.GITLAB_USER_EMAIL }}
+          SSH_KNOWN_HOST: ${{ secrets.SSH_KNOWN_HOST }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          CURRENT_BRANCH: ${{ github.event.client_payload.branch }}
+          GIT_LAB_COMMIT_SHA: ${{ github.event.client_payload.commit_sha }}
+          GIT_LAB_PIPELINE_ID: ${{ github.event.client_payload.pipeline_id }}
+          REPO_URL: ${{ secrets.REPO_URL }}
+          ENCRYPT_PASSWORD: ${{ secrets.ENCRYPT_PASSWORD }}
           DATABASE_DEFAULT_ENCRYPTION_KEY: ${{ secrets.DATABASE_DEFAULT_ENCRYPTION_KEY }}
-          OAUTH_CLIENT_ID_ANDROID: ${{ secrets.OAUTH_CLIENT_ID_ANDROID_STAGING }}
-          OAUTH_CLIENT_ID_IOS: ${{ secrets.OAUTH_CLIENT_ID_IOS_STAGING }}
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          REVENUECAT_API_KEY_ANDROID: ${{ secrets.REVENUECAT_API_KEY_ANDROID }}
-          REVENUECAT_API_KEY_IOS: ${{ secrets.REVENUECAT_API_KEY_IOS }}
-          TIKTOK_ACCESS_TOKEN: ${{ secrets.TIKTOK_ACCESS_TOKEN }}
-          TIKTOK_APP_ID: ${{ secrets.TIKTOK_APP_ID }}
-          # Fastlane env variables
+          OAUTH_CLIENT_ID_ANDROID: ${{ secrets.OAUTH_CLIENT_ID_ANDROID }}
+          APP_METRICA_API_KEY: ${{ secrets.APP_METRICA_API_KEY }}
           BUMP_TYPE: ${{ github.event.client_payload.bump_type }}
+          APP_RELEASE_VERSION: ${{ github.event.client_payload.app_release_version }}
+          GIT_LAB_ACCESS_TOKEN: ${{ secrets.GIT_LAB_ACCESS_TOKEN }}
+          OAUTH_CLIENT_ID_IOS: ${{ secrets.OAUTH_CLIENT_ID_IOS_STAGING }}
+          AMPLITUDE_API_KEY: ${{ secrets.AMPLITUDE_API_KEY }}
+          APPSFLYER_API_KEY: ${{ secrets.APPSFLYER_API_KEY }}
+          REVENUECAT_API_KEY_IOS: ${{ secrets.REVENUECAT_API_KEY_IOS }}
+          REVENUECAT_API_KEY_ANDROID: ${{ secrets.REVENUECAT_API_KEY_ANDROID }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          TIKTOK_APP_ID: ${{ secrets.TIKTOK_APP_ID }}
+          TIKTOK_ACCESS_TOKEN: ${{ secrets.TIKTOK_ACCESS_TOKEN }}
