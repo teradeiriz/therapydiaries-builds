@@ -35,15 +35,18 @@ runs:
 
     - name: Set up SSH keys for authentication
       shell: bash
+      env:
+        SSH_PRIVATE_KEY: ${{ inputs.ssh-private-key }}
+        SSH_KNOWN_HOST: ${{ inputs.ssh-known-host }}
+        SSH_AUTH_SOCK_PATH: ${{ inputs.ssh-auth-sock }}
       run: |
-        set -x
         mkdir -p ~/.ssh
-        echo "${{ inputs.ssh-private-key }}" > ~/.ssh/id_rsa
+        printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/id_rsa
         chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan ${{ inputs.ssh-known-host }} >> ~/.ssh/known_hosts
-        ssh-agent -a ${{ inputs.ssh-auth-sock }} > /dev/null
-        echo "SSH_AUTH_SOCK=${{ inputs.ssh-auth-sock }}" >> $GITHUB_ENV
-        SSH_AUTH_SOCK=${{ inputs.ssh-auth-sock }} ssh-add ~/.ssh/id_rsa
+        ssh-keyscan "$SSH_KNOWN_HOST" >> ~/.ssh/known_hosts
+        ssh-agent -a "$SSH_AUTH_SOCK_PATH" > /dev/null
+        echo "SSH_AUTH_SOCK=$SSH_AUTH_SOCK_PATH" >> "$GITHUB_ENV"
+        SSH_AUTH_SOCK="$SSH_AUTH_SOCK_PATH" ssh-add ~/.ssh/id_rsa
 
     - name: Backup .github directory, clone the repository, and restore .github directory
       shell: bash

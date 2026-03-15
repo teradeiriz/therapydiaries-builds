@@ -4,6 +4,13 @@ on:
   repository_dispatch:
     types: ["test-all"]
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.client_payload.pipeline_id || github.run_id }}
+  cancel-in-progress: true
+
 env:
   RUBY_VERSION: '3.4.2'
   NODE_VERSION: '24'
@@ -22,6 +29,7 @@ jobs:
   check_code_changes:
     name: "🔍 Check Code Changes"
     runs-on: ubuntu-24.04
+    timeout-minutes: 10
     outputs:
       run_code_quality: ${{ steps.can_run.outcome == 'skipped' || steps.can_run.outputs.ts_has_changes == 'true' || steps.can_run.outputs.lint_has_changes == 'true' || steps.can_run.outputs.i18n_has_changes == 'true' || steps.can_run.outputs.test_has_changes == 'true' }}
       run_ts: ${{ steps.can_run.outcome == 'skipped' || steps.can_run.outputs.ts_has_changes == 'true' }}
@@ -52,6 +60,7 @@ jobs:
     needs: check_code_changes
     if: needs.check_code_changes.outputs.run_code_quality == 'true'
     runs-on: ubuntu-24.04 # macos-26 has when same performance as ubuntu-24.04 for this job
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v6
         with:
@@ -103,6 +112,7 @@ jobs:
     needs: check_code_changes
     if: needs.check_code_changes.outputs.run_ios_build == 'true'
     runs-on: macos-26 # macos-26 Installed Software: https://github.com/actions/runner-images/blob/main/images/macos/macos-26-arm64-Readme.md
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v6
         with:
@@ -192,6 +202,7 @@ jobs:
     needs: check_code_changes
     if: needs.check_code_changes.outputs.run_android_build == 'true'
     runs-on: ubuntu-24.04 # M1 not a really faster than x64
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v6
         with:
@@ -210,7 +221,6 @@ jobs:
           ssh-known-host: ${{ secrets.SSH_KNOWN_HOST }}
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
           branch: ${{ github.event.client_payload.branch }}
-
 
       - name: Notify gitlab
         run: ./infrastructure/gitlab/status.sh "state=running&description=$GITHUB_RUN_ID"
@@ -261,7 +271,6 @@ jobs:
           CURRENT_BRANCH: ${{ github.event.client_payload.branch }}
           FIREBASEAPPDISTRO_APP: ${{ secrets.FIREBASE_APP_ID_ANDROID }}
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-
 
       - name: Save Gradle cache
         if: steps.gradle-cache-restore.outputs.cache-hit != 'true'

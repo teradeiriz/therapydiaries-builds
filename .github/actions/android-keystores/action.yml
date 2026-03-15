@@ -10,9 +10,11 @@ runs:
   steps:
     - name: Decrypt keystore and Google Credentials
       shell: bash
+      env:
+        ENCRYPT_PASSWORD: ${{ inputs.encrypt-password }}
       run: |
-        gpg --quiet --batch --yes --decrypt --passphrase="${{ inputs.encrypt-password }}" \
+        gpg --quiet --batch --yes --decrypt --passphrase-env ENCRYPT_PASSWORD \
         --output ./android/keystores/release.keystore ./android/keystores/release.keystore.gpg
-        gpg --quiet --batch --yes --decrypt --passphrase="${{ inputs.encrypt-password }}" \
+        gpg --quiet --batch --yes --decrypt --passphrase-env ENCRYPT_PASSWORD \
         --output ./android/keystores/google-private-key.json ./android/keystores/google-private-key.json.gpg
 
