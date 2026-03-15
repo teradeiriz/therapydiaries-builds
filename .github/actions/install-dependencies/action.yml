@@ -15,7 +15,7 @@ runs:
   steps:
     - name: Restore node_modules from cache
       if: ${{ inputs.no-cache != 'true' }}
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@v5
       id: restore_node_modules
       with:
         key: ${{ runner.os }}-yarn-${{ hashFiles('yarn.lock') }}-patches-${{ hashFiles('patches/*.patch') }}
@@ -40,7 +40,7 @@ runs:
 
     - name: Save node_modules to cache
       if: steps.restore_node_modules.outputs.cache-hit != 'true' && inputs.no-cache != 'true'
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@v5
       with:
         key: ${{ steps.restore_node_modules.outputs.cache-primary-key }}
         path: ${{ github.workspace }}/node_modules
