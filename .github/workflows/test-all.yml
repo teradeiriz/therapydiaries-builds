@@ -31,7 +31,7 @@ jobs:
       run_ios_build: ${{ steps.can_run.outcome == 'skipped' || steps.can_run.outputs.ios_has_changes == 'true' }}
       run_android_build: ${{ steps.can_run.outcome == 'skipped' || steps.can_run.outputs.android_has_changes == 'true' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 1
       - uses: ./.github/actions/clone-repo
@@ -53,7 +53,7 @@ jobs:
     if: needs.check_code_changes.outputs.run_code_quality == 'true'
     runs-on: ubuntu-24.04 # macos-26 has when same performance as ubuntu-24.04 for this job
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 1
 
@@ -104,7 +104,7 @@ jobs:
     if: needs.check_code_changes.outputs.run_ios_build == 'true'
     runs-on: macos-26 # macos-26 Installed Software: https://github.com/actions/runner-images/blob/main/images/macos/macos-26-arm64-Readme.md
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 1
 
@@ -131,7 +131,7 @@ jobs:
       - uses: ./.github/actions/install-dependencies
 
       - name: Pods cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             ~/.cocoapods
@@ -145,7 +145,7 @@ jobs:
         run: yarn pod-install
 
       - name: iOS build cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: .local_derived_data
           key: ${{ runner.os }}-pods-derived-data-${{ hashFiles('ios/Podfile.lock') }}
@@ -193,7 +193,7 @@ jobs:
     if: needs.check_code_changes.outputs.run_android_build == 'true'
     runs-on: ubuntu-24.04 # M1 not a really faster than x64
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 1
 
@@ -227,7 +227,7 @@ jobs:
 
       - name: Restore Gradle cache
         id: gradle-cache-restore
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         with:
           path: |
             ~/.gradle/caches
@@ -265,7 +265,7 @@ jobs:
 
       - name: Save Gradle cache
         if: steps.gradle-cache-restore.outputs.cache-hit != 'true'
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         with:
           path: |
             ~/.gradle/caches
