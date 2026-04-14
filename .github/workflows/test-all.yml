@@ -93,6 +93,10 @@ jobs:
         if: needs.check_code_changes.outputs.run_test == 'true'
         run: yarn test --ci
 
+      - name: Find unused files, dependencies and exports
+        if: needs.check_code_changes.outputs.run_lint == 'true'
+        run: yarn knip
+
       - uses: ./.github/actions/notify-gitlab
         if: always()
         with:
