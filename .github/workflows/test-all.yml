@@ -5,6 +5,7 @@ on:
     types: ["test-all"]
 
 env:
+  WITH_ROZENITE: false
   RUBY_VERSION: '3.4.2'
   NODE_VERSION: '24'
   JAVA_VERSION: '21'
