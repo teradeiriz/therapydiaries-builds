@@ -187,6 +187,14 @@ jobs:
           MATCH_PASSWORD: ${{ secrets.MATCH_PASSWORD }}
           CUSTOM_BUILD_NUMBER: ${{ github.run_number }}
 
+          # Sentry upload (https://docs.sentry.io/platforms/react-native/size-analysis/)
+          GITLAB_CURRENT_BRANCH: ${{ github.event.client_payload.branch }}
+          GITLAB_COMMIT_SHA: ${{ github.event.client_payload.commit_sha }}
+          GITLAB_TARGET_SHA: ${{ github.event.client_payload.target_sha }}
+          GITLAB_TARGET_BRANCH: ${{ github.event.client_payload.target_branch }}
+          GITLAB_PR_NUMBER: ${{ github.event.client_payload.pr_id }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.AMPLITUDE_API_KEY }}
+
       - uses: ./.github/actions/notify-gitlab
         if: always()
         with:
@@ -266,6 +274,14 @@ jobs:
           CURRENT_BRANCH: ${{ github.event.client_payload.branch }}
           FIREBASEAPPDISTRO_APP: ${{ secrets.FIREBASE_APP_ID_ANDROID }}
           FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+
+          # Sentry upload (https://docs.sentry.io/platforms/react-native/size-analysis/)
+          GITLAB_CURRENT_BRANCH: ${{ github.event.client_payload.branch }}
+          GITLAB_COMMIT_SHA: ${{ github.event.client_payload.commit_sha }}
+          GITLAB_TARGET_SHA: ${{ github.event.client_payload.target_sha }}
+          GITLAB_TARGET_BRANCH: ${{ github.event.client_payload.target_branch }}
+          GITLAB_PR_NUMBER: ${{ github.event.client_payload.pr_id }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.AMPLITUDE_API_KEY }}
 
 
       - name: Save Gradle cache
