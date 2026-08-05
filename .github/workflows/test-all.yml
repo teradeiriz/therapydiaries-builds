@@ -194,7 +194,7 @@ jobs:
           GITLAB_TARGET_SHA: ${{ github.event.client_payload.target_sha }}
           GITLAB_TARGET_BRANCH: ${{ github.event.client_payload.target_branch }}
           GITLAB_PR_NUMBER: ${{ github.event.client_payload.pr_id }}
-          SENTRY_AUTH_TOKEN: ${{ secrets.AMPLITUDE_API_KEY }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
       - uses: ./.github/actions/notify-gitlab
         if: always()
@@ -283,7 +283,7 @@ jobs:
           GITLAB_TARGET_SHA: ${{ github.event.client_payload.target_sha }}
           GITLAB_TARGET_BRANCH: ${{ github.event.client_payload.target_branch }}
           GITLAB_PR_NUMBER: ${{ github.event.client_payload.pr_id }}
-          SENTRY_AUTH_TOKEN: ${{ secrets.AMPLITUDE_API_KEY }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
 
       - name: Save Gradle cache
