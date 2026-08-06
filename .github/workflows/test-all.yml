@@ -45,7 +45,7 @@ jobs:
           branch: ${{ github.event.client_payload.branch }}
       - name: Check for code changes (exclusion & inclusion patterns)
         id: can_run
-        if: github.event.client_payload.diff_check && github.event.client_payload.target_branch # target_branch is empty for merged PRs to default branch (so there is nothing to compare with)
+        if: github.event.client_payload.diff_check && github.event.client_payload.target_branch != github.event.client_payload.branch # if the target branch is the same as the source branch (pipeline on merge to develop)
         run: node infrastructure/github/check-diff.js ${{ github.event.client_payload.target_branch }}
 
   code-quality:
@@ -284,6 +284,27 @@ jobs:
           GITLAB_TARGET_BRANCH: ${{ github.event.client_payload.target_branch }}
           GITLAB_PR_NUMBER: ${{ github.event.client_payload.pr_id }}
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+
+      - name: Find APK file
+        id: myapk
+        if: github.event.client_payload.branch == 'develop'
+        env:
+          ARTIFACTS_PASSWORD: ${{ secrets.ARTIFACTS_PASSWORD }}
+        run: |
+          APK_PATH="$(find android -type f -name '*.apk' | head -n 1)"
+          if [ -z "$APK_PATH" ]; then
+            echo "APK file was not found"
+            exit 1
+          fi
+          echo "apk_path=$APK_PATH" >> "$GITHUB_OUTPUT"
+
+      - name: Upload APK artifact
+        if: github.event.client_payload.branch == 'develop'
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-${{ github.run_number }}
+          path: ${{ steps.myapk.outputs.apk_path }}
+          if-no-files-found: error
 
 
       - name: Save Gradle cache
