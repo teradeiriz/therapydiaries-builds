@@ -158,6 +158,7 @@ jobs:
       - name: Run fastlane line "fastlane ios distribute" with PROD ENV variables
         run: bundle exec fastlane ios distribute
         env:
+          PLATFORM_TYPE: ios
           BETA_BUILD: true
           # sentry
           SENTRY_DIST: 0
@@ -264,6 +265,7 @@ jobs:
       - name: Run fastlane line "fastlane android distribute" with PROD ENV variables
         run: bundle exec fastlane android distribute
         env:
+          PLATFORM_TYPE: android
           BETA_BUILD: true
           # sentry
           SENTRY_DIST: 0
