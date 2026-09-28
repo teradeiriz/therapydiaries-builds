@@ -202,7 +202,7 @@ jobs:
         continue-on-error: true # never fail the build because of the stats
         with:
           platform: ios
-          password: ${{ secrets.ARTIFACTS_PASSWORD }}
+          password: ${{ secrets.ENCRYPT_PASSWORD }}
           branch: ${{ github.event.client_payload.branch }}
           target-branch: ${{ github.event.client_payload.target_branch }}
           gitlab-token: ${{ secrets.GIT_LAB_ACCESS_TOKEN }}
@@ -303,7 +303,7 @@ jobs:
         continue-on-error: true # never fail the build because of the stats
         with:
           platform: android
-          password: ${{ secrets.ARTIFACTS_PASSWORD }}
+          password: ${{ secrets.ENCRYPT_PASSWORD }}
           branch: ${{ github.event.client_payload.branch }}
           target-branch: ${{ github.event.client_payload.target_branch }}
           gitlab-token: ${{ secrets.GIT_LAB_ACCESS_TOKEN }}
