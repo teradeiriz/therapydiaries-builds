@@ -19,7 +19,7 @@ inputs:
     required: false
     default: ''
   pr-number:
-    description: 'GitLab MR number (passed to compare.sh)'
+    description: 'GitLab MR IID (passed to compare.sh as GIT_LAB_MR_IID)'
     required: false
     default: ''
 
@@ -83,11 +83,13 @@ runs:
         path: .metro-stats-cache/${{ inputs.platform }}-metro-stats.7z
         key: metro-stats-${{ inputs.platform }}/${{ inputs.branch }}~${{ github.run_id }}-${{ github.run_attempt }}
 
+    # Posts the report as a GitLab MR comment, so it's skipped when there is no MR (e.g. pipeline on merge to develop)
     - name: Compare with baseline
-      if: steps.decrypt.outcome == 'success'
+      if: steps.decrypt.outcome == 'success' && inputs.pr-number != ''
       continue-on-error: true
       shell: bash
       env:
         GIT_LAB_ACCESS_TOKEN: ${{ inputs.gitlab-token }}
-        GITLAB_PR_NUMBER: ${{ inputs.pr-number }}
-      run: infrastructure/github/compare.sh baseline-${{ inputs.platform }}-metro-stats.json ${{ inputs.platform }}-metro-stats.json
+        GIT_LAB_MR_IID: ${{ inputs.pr-number }}
+        PLATFORM: ${{ inputs.platform }}
+      run: bash infrastructure/github/compare.sh "baseline-$PLATFORM-metro-stats.json" "$PLATFORM-metro-stats.json" "$PLATFORM"
