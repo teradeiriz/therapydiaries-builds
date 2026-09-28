@@ -1,0 +1,93 @@
+name: 'Metro bundle stats'
+description: 'Restores the target branch baseline of <platform>-metro-stats.json, stores the current one as the baseline of the current branch and compares them. Files are kept in the cache as password protected 7z archives because this repository is public.'
+inputs:
+  platform:
+    description: 'ios or android'
+    required: true
+  password:
+    description: 'Password used to encrypt/decrypt the stats archive'
+    required: true
+  branch:
+    description: 'Current branch (baseline is saved for it)'
+    required: true
+  target-branch:
+    description: 'Target branch (baseline is restored from it)'
+    required: false
+    default: ''
+  gitlab-token:
+    description: 'GIT_LAB_ACCESS_TOKEN (passed to compare.sh)'
+    required: false
+    default: ''
+  pr-number:
+    description: 'GitLab MR number (passed to compare.sh)'
+    required: false
+    default: ''
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Check ${{ inputs.platform }}-metro-stats.json exists
+      shell: bash
+      run: |
+        STATS="${{ inputs.platform }}-metro-stats.json"
+        if [ ! -f "$STATS" ]; then
+          echo "::warning::$STATS was not found, skipping stats comparison"
+          exit 1
+        fi
+        ls -la "$STATS"
+
+    # Cache "version" depends on `path`, so restore and save must use the same path.
+    # That's why the baseline is restored (and extracted) before the current stats are packed.
+    - name: Restore baseline stats (${{ inputs.target-branch }})
+      id: restore
+      if: inputs.target-branch != ''
+      uses: actions/cache/restore@v5
+      with:
+        path: .metro-stats-cache/${{ inputs.platform }}-metro-stats.7z
+        key: metro-stats-${{ inputs.platform }}/${{ inputs.target-branch }}~latest
+        restore-keys: metro-stats-${{ inputs.platform }}/${{ inputs.target-branch }}~
+
+    - name: Decrypt baseline stats
+      id: decrypt
+      if: steps.restore.outputs.cache-matched-key != ''
+      continue-on-error: true
+      shell: bash
+      env:
+        PASSWORD: ${{ inputs.password }}
+        PLATFORM: ${{ inputs.platform }}
+      run: |
+        set -e
+        SEVEN_ZIP="$(command -v 7zz || command -v 7z)"
+        rm -rf .metro-stats-baseline
+        "$SEVEN_ZIP" x -y -p"$PASSWORD" -o.metro-stats-baseline ".metro-stats-cache/$PLATFORM-metro-stats.7z" > /dev/null
+        mv ".metro-stats-baseline/$PLATFORM-metro-stats.json" "baseline-$PLATFORM-metro-stats.json"
+        rm -rf .metro-stats-baseline ".metro-stats-cache/$PLATFORM-metro-stats.7z"
+        ls -la "baseline-$PLATFORM-metro-stats.json"
+
+    - name: Encrypt current stats
+      shell: bash
+      env:
+        PASSWORD: ${{ inputs.password }}
+        PLATFORM: ${{ inputs.platform }}
+      run: |
+        set -e
+        SEVEN_ZIP="$(command -v 7zz || command -v 7z)"
+        mkdir -p .metro-stats-cache
+        rm -f ".metro-stats-cache/$PLATFORM-metro-stats.7z"
+        # -mhe=on also encrypts file names; AES-256 is used for 7z archives
+        "$SEVEN_ZIP" a -t7z -mhe=on -p"$PASSWORD" ".metro-stats-cache/$PLATFORM-metro-stats.7z" "$PLATFORM-metro-stats.json" > /dev/null
+
+    - name: Save current stats as baseline (${{ inputs.branch }})
+      uses: actions/cache/save@v5
+      with:
+        path: .metro-stats-cache/${{ inputs.platform }}-metro-stats.7z
+        key: metro-stats-${{ inputs.platform }}/${{ inputs.branch }}~${{ github.run_id }}-${{ github.run_attempt }}
+
+    - name: Compare with baseline
+      if: steps.decrypt.outcome == 'success'
+      continue-on-error: true
+      shell: bash
+      env:
+        GIT_LAB_ACCESS_TOKEN: ${{ inputs.gitlab-token }}
+        GITLAB_PR_NUMBER: ${{ inputs.pr-number }}
+      run: infrastructure/github/compare.sh baseline-${{ inputs.platform }}-metro-stats.json ${{ inputs.platform }}-metro-stats.json

@@ -196,6 +196,17 @@ jobs:
           GITLAB_PR_NUMBER: ${{ github.event.client_payload.pr_id }}
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
 
+      - name: Compare Metro bundle stats
+        uses: ./.github/actions/metro-stats
+        continue-on-error: true # never fail the build because of the stats
+        with:
+          platform: ios
+          password: ${{ secrets.ARTIFACTS_PASSWORD }}
+          branch: ${{ github.event.client_payload.branch }}
+          target-branch: ${{ github.event.client_payload.target_branch }}
+          gitlab-token: ${{ secrets.GIT_LAB_ACCESS_TOKEN }}
+          pr-number: ${{ github.event.client_payload.pr_id }}
+
       - uses: ./.github/actions/notify-gitlab
         if: always()
         with:
@@ -284,6 +295,17 @@ jobs:
           GITLAB_TARGET_BRANCH: ${{ github.event.client_payload.target_branch }}
           GITLAB_PR_NUMBER: ${{ github.event.client_payload.pr_id }}
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+
+      - name: Compare Metro bundle stats
+        uses: ./.github/actions/metro-stats
+        continue-on-error: true # never fail the build because of the stats
+        with:
+          platform: android
+          password: ${{ secrets.ARTIFACTS_PASSWORD }}
+          branch: ${{ github.event.client_payload.branch }}
+          target-branch: ${{ github.event.client_payload.target_branch }}
+          gitlab-token: ${{ secrets.GIT_LAB_ACCESS_TOKEN }}
+          pr-number: ${{ github.event.client_payload.pr_id }}
 
       - name: Find APK file
         id: myapk
