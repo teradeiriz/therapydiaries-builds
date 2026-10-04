@@ -251,16 +251,16 @@ jobs:
 
       - run: bundle install --jobs 4 --retry 3
 
-      - name: Restore Gradle cache
-        id: gradle-cache-restore
-        uses: actions/cache/restore@v5
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-
+#      - name: Restore Gradle cache
+#        id: gradle-cache-restore
+#        uses: actions/cache/restore@v5
+#        with:
+#          path: |
+#            ~/.gradle/caches
+#            ~/.gradle/wrapper
+#          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties') }}
+#          restore-keys: |
+#            ${{ runner.os }}-gradle-
 
       - name: Run fastlane line "fastlane android distribute" with PROD ENV variables
         run: bundle exec fastlane android distribute
