@@ -108,6 +108,7 @@ jobs:
     needs: check_code_changes
     if: needs.check_code_changes.outputs.run_ios_build == 'true'
     runs-on: macos-26 # macos-26 Installed Software: https://github.com/actions/runner-images/blob/main/images/macos/macos-26-arm64-Readme.md
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v6
         with:
@@ -218,6 +219,7 @@ jobs:
     needs: check_code_changes
     if: needs.check_code_changes.outputs.run_android_build == 'true'
     runs-on: ubuntu-24.04 # M1 not a really faster than x64
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v6
         with:
