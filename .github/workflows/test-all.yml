@@ -225,9 +225,18 @@ jobs:
         with:
           fetch-depth: 1
 
+      # NDKs required by the build are not preinstalled on ubuntu-24.04 (it has 27.3, 29, 30), so Gradle
+      # installs them serially during configuration (~1.5 min). Download them in background instead.
+      # 27.1.12297006 - `ndkVersion` in android/build.gradle, 28.2.13676358 - AGP default (used by realm)
+      - name: Prefetch Android NDKs in background
+        run: |
+          (
+            "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;27.1.12297006" "ndk;28.2.13676358"
+            echo $? > /tmp/ndk-prefetch.exit
+          ) < /dev/null > /tmp/ndk-prefetch.log 2>&1 &
+
       - uses: ./.github/actions/initial-setup
         with:
-          ruby: ${{ env.RUBY_VERSION }}
           java: ${{ env.JAVA_VERSION }}
 
       - uses: ./.github/actions/clone-repo
@@ -239,6 +248,12 @@ jobs:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
           branch: ${{ github.event.client_payload.branch }}
 
+      # Ruby is set up after clone-repo, so `bundler-cache` can find the app's Gemfile.lock
+      - name: Install Ruby ${{ env.RUBY_VERSION }} and gems
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ env.RUBY_VERSION }}
+          bundler-cache: true
 
       - name: Notify gitlab
         run: ./infrastructure/gitlab/status.sh "state=running&description=$GITHUB_RUN_ID"
@@ -251,7 +266,35 @@ jobs:
 
       - uses: ./.github/actions/install-dependencies
 
-      - run: bundle install --jobs 4 --retry 3
+      # Only develop saves the cache (MRs only restore it) to stay within the repo cache limit
+      - name: Set up ccache for native (CMake) builds
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          key: android
+          max-size: 2G
+          evict-old-files: job
+          save: ${{ github.event.client_payload.branch == 'develop' }}
+
+      - name: Gradle tweaks for CI
+        run: |
+          mkdir -p ~/.gradle/init.d
+          # Lint vitals are not needed for the internal Firebase build
+          cat > ~/.gradle/init.d/skip-lint-vital.gradle <<'EOF'
+          allprojects {
+            tasks.configureEach { if (name.startsWith('lintVital')) enabled = false }
+          }
+          EOF
+          # Verified with `./gradlew :app:checkJetifier`: no legacy support libraries are used
+          # (~/.gradle/gradle.properties takes precedence over android/gradle.properties)
+          echo "android.enableJetifier=false" >> ~/.gradle/gradle.properties
+
+      - name: Wait for NDKs prefetch
+        timeout-minutes: 10
+        run: |
+          while [ ! -f /tmp/ndk-prefetch.exit ]; do sleep 2; done
+          tail -n 5 /tmp/ndk-prefetch.log
+          # Not fatal: Gradle installs missing NDKs by itself
+          [ "$(cat /tmp/ndk-prefetch.exit)" = "0" ] || echo "::warning::NDK prefetch failed, see the log above"
 
 #      - name: Restore Gradle cache
 #        id: gradle-cache-restore
@@ -267,6 +310,11 @@ jobs:
       - name: Run fastlane line "fastlane android distribute" with PROD ENV variables
         run: bundle exec fastlane android distribute
         env:
+          # ccache for all CMake modules (CMake reads *_COMPILER_LAUNCHER from env)
+          CMAKE_C_COMPILER_LAUNCHER: ccache
+          CMAKE_CXX_COMPILER_LAUNCHER: ccache
+          CCACHE_COMPILERCHECK: content # NDK is freshly installed on every run, so its mtime always differs
+          CCACHE_SLOPPINESS: include_file_ctime,include_file_mtime,time_macros
           PLATFORM_TYPE: android
           BETA_BUILD: true
           # sentry
