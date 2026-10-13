@@ -214,7 +214,9 @@ jobs:
           platform: ios
           password: ${{ secrets.ENCRYPT_PASSWORD }}
           branch: ${{ github.event.client_payload.branch }}
+          commit-sha: ${{ github.event.client_payload.commit_sha }}
           target-branch: ${{ github.event.client_payload.target_branch }}
+          target-sha: ${{ github.event.client_payload.target_sha }}
           gitlab-token: ${{ secrets.GIT_LAB_ACCESS_TOKEN }}
           pr-number: ${{ github.event.client_payload.pr_id }}
 
@@ -360,7 +362,9 @@ jobs:
           platform: android
           password: ${{ secrets.ENCRYPT_PASSWORD }}
           branch: ${{ github.event.client_payload.branch }}
+          commit-sha: ${{ github.event.client_payload.commit_sha }}
           target-branch: ${{ github.event.client_payload.target_branch }}
+          target-sha: ${{ github.event.client_payload.target_sha }}
           gitlab-token: ${{ secrets.GIT_LAB_ACCESS_TOKEN }}
           pr-number: ${{ github.event.client_payload.pr_id }}
 

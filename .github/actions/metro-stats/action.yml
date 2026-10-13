@@ -10,8 +10,15 @@ inputs:
   branch:
     description: 'Current branch (baseline is saved for it)'
     required: true
+  commit-sha:
+    description: 'Commit that was built (baseline is saved for it)'
+    required: true
   target-branch:
     description: 'Target branch (baseline is restored from it)'
+    required: false
+    default: ''
+  target-sha:
+    description: 'Target branch commit the MR is compared with (baseline of exactly this commit is restored)'
     required: false
     default: ''
   gitlab-token:
@@ -38,14 +45,18 @@ runs:
 
     # Cache "version" depends on `path`, so restore and save must use the same path.
     # That's why the baseline is restored (and extracted) before the current stats are packed.
-    - name: Restore baseline stats (${{ inputs.target-branch }})
+    # Baseline of the exact target commit is preferred: a newer one may contain changes the MR doesn't have.
+    # Falls back to the latest baseline of the target branch when there is none for that commit.
+    - name: Restore baseline stats (${{ inputs.target-branch }} ${{ inputs.target-sha }})
       id: restore
       if: inputs.target-branch != ''
       uses: actions/cache/restore@v5
       with:
         path: .metro-stats-cache/${{ inputs.platform }}-metro-stats.7z
-        key: metro-stats-${{ inputs.platform }}/${{ inputs.target-branch }}~latest
-        restore-keys: metro-stats-${{ inputs.platform }}/${{ inputs.target-branch }}~
+        key: metro-stats-${{ inputs.platform }}/${{ inputs.target-branch }}~${{ inputs.target-sha }}~latest
+        restore-keys: |
+          metro-stats-${{ inputs.platform }}/${{ inputs.target-branch }}~${{ inputs.target-sha }}~
+          metro-stats-${{ inputs.platform }}/${{ inputs.target-branch }}~
 
     - name: Decrypt baseline stats
       id: decrypt
@@ -55,8 +66,14 @@ runs:
       env:
         PASSWORD: ${{ inputs.password }}
         PLATFORM: ${{ inputs.platform }}
+        MATCHED_KEY: ${{ steps.restore.outputs.cache-matched-key }}
+        EXACT_PREFIX: metro-stats-${{ inputs.platform }}/${{ inputs.target-branch }}~${{ inputs.target-sha }}~
       run: |
         set -e
+        case "$MATCHED_KEY" in
+          "$EXACT_PREFIX"*) ;;
+          *) echo "::warning::No baseline for target commit, using the latest one ($MATCHED_KEY): the report may include changes the MR doesn't have" ;;
+        esac
         SEVEN_ZIP="$(command -v 7zz || command -v 7z)"
         rm -rf .metro-stats-baseline
         "$SEVEN_ZIP" x -y -p"$PASSWORD" -o.metro-stats-baseline ".metro-stats-cache/$PLATFORM-metro-stats.7z" > /dev/null
@@ -81,7 +98,7 @@ runs:
       uses: actions/cache/save@v5
       with:
         path: .metro-stats-cache/${{ inputs.platform }}-metro-stats.7z
-        key: metro-stats-${{ inputs.platform }}/${{ inputs.branch }}~${{ github.run_id }}-${{ github.run_attempt }}
+        key: metro-stats-${{ inputs.platform }}/${{ inputs.branch }}~${{ inputs.commit-sha }}~${{ github.run_id }}-${{ github.run_attempt }}
 
     # Posts the report as a GitLab MR comment, so it's skipped when there is no MR (e.g. pipeline on merge to develop)
     - name: Compare with baseline
