@@ -280,6 +280,8 @@ jobs:
 
           # Only develop saves the cache (MRs only restore it) to stay within the repo cache limit
           - name: Set up ccache for native (CMake) builds
+            id: ccache
+            continue-on-error: true # not fatal: apt can fail on runner network hiccups, build just runs without ccache
             uses: hendrikmuhs/ccache-action@v1.2
             with:
               key: android
@@ -318,8 +320,8 @@ jobs:
         run: bundle exec fastlane android distribute
         env:
           # ccache for all CMake modules (CMake reads *_COMPILER_LAUNCHER from env)
-          CMAKE_C_COMPILER_LAUNCHER: ccache
-          CMAKE_CXX_COMPILER_LAUNCHER: ccache
+          CMAKE_C_COMPILER_LAUNCHER: ${{ steps.ccache.outcome == 'success' && 'ccache' || '' }}
+          CMAKE_CXX_COMPILER_LAUNCHER: ${{ steps.ccache.outcome == 'success' && 'ccache' || '' }}
           CCACHE_COMPILERCHECK: content # NDK is freshly installed on every run, so its mtime always differs
           CCACHE_SLOPPINESS: include_file_ctime,include_file_mtime,time_macros
           PLATFORM_TYPE: android
